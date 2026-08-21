@@ -110,9 +110,9 @@ SiRajin_Storage/
 ## 8. Autentikasi & Sesi
 
 1. NIP (pegawai) atau NIP+password (admin) divalidasi terhadap sheet `Pegawai`/`Admin` (status harus Aktif).
-2. Backend generate token (`Utilities.getUuid()`), simpan di `CacheService` (TTL 8 jam) berpasangan dengan identitas & peran pemilik.
+2. Backend generate token (`Utilities.getUuid()`), simpan di `CacheService` (TTL 21.600 detik/6 jam — batas maksimum keras `CacheService`, tidak bisa lebih) berpasangan dengan identitas & peran pemilik.
 3. Token dikirim ke browser, disimpan di `sessionStorage` (hilang saat tab ditutup — sesuai pemakaian bergantian di komputer/HP kantor).
-4. Setiap pemanggilan `google.script.run` menyertakan token; backend memvalidasi token ke Cache sebelum memproses. Token tidak ditemukan/kedaluwarsa → respons "unauthorized", frontend redirect ke halaman login tanpa kehilangan data form yang sedang diisi (dipertahankan di memori JS).
+4. Setiap pemanggilan `google.script.run` menyertakan token; backend memvalidasi token ke Cache sebelum memproses, **dan menulis ulang (`put`) token yang sama dengan TTL 21.600 detik lagi** — ini mereset penghitung waktu Cache, sehingga selama pegawai aktif memakai aplikasi sepanjang jam kerja, sesinya tidak pernah kedaluwarsa di tengah. Token tidak ditemukan/benar-benar kedaluwarsa (idle >6 jam) → respons "unauthorized", frontend redirect ke halaman login tanpa kehilangan data form yang sedang diisi (dipertahankan di memori JS).
 
 ## 9. Peta Halaman
 
