@@ -1,0 +1,66 @@
+<?!= include('Shared'); ?>
+<style>
+  .admin-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    margin: -16px -16px 24px -16px;
+    background: var(--paper);
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .admin-nav { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+  .admin-nav a { color: var(--ink-600); text-decoration: none; font-size: 14px; font-weight: 600; }
+  .admin-nav a:hover { color: var(--blue-600); }
+  .admin-nav-brand { font-weight: 700; color: var(--ink-900); font-size: 16px; }
+  .admin-user { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--ink-600); }
+  .admin-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  .admin-table th, .admin-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
+  .admin-table th { background: var(--surface); text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: var(--ink-600); }
+  .table-wrap { overflow-x: auto; }
+  .stat-card { display: inline-block; min-width: 160px; padding: 20px; background: var(--paper); border: 1px solid var(--border); border-radius: 10px; margin-right: 12px; margin-bottom: 12px; }
+  .stat-number { font-size: 32px; font-weight: 700; color: var(--ink-900); }
+  .stat-label { font-size: 12px; color: var(--ink-600); text-transform: uppercase; }
+</style>
+<script>
+  function requireAdminLogin() {
+    if (!getToken()) { window.location.href = '?page=admin-login'; }
+  }
+
+  function renderAdminNav() {
+    requireAdminLogin();
+
+    var topbarHtml = '<div class="admin-topbar">' +
+      '<div class="admin-nav"><span class="admin-nav-brand">SiRajin Admin</span>' +
+      '<span id="adminNavLinks"></span></div>' +
+      '<div class="admin-user"><span id="adminUserName"></span>' +
+      '<a href="#" onclick="adminLogout(); return false;">Keluar</a></div></div>';
+    document.body.insertAdjacentHTML('afterbegin', topbarHtml);
+
+    google.script.run
+      .withSuccessHandler(function (result) {
+        if (!result.success) {
+          if (!handleSessionExpiry(result.message)) { window.location.href = '?page=admin-login'; }
+          return;
+        }
+        var session = result.session;
+        var navLinks = '<a href="?page=admin">Dashboard</a>' +
+          '<a href="?page=admin/pegawai">Kelola Pegawai</a>' +
+          '<a href="?page=admin/laporan">Kelola Laporan</a>' +
+          (session.level === 'SuperAdmin' ? '<a href="?page=admin/akun">Kelola Admin</a>' : '');
+        document.getElementById('adminNavLinks').innerHTML = navLinks;
+        document.getElementById('adminUserName').textContent = session.nama + ' (' + session.level + ')';
+      })
+      .withFailureHandler(function (error) {
+        console.error('Gagal memuat sesi admin: ' + error.message);
+      })
+      .getMySession(getToken());
+  }
+
+  function adminLogout() {
+    clearToken();
+    window.location.href = '?page=admin-login';
+  }
+</script>

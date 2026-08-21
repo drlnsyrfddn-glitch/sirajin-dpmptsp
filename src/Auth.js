@@ -87,6 +87,20 @@ function validateToken(token) {
   return JSON.parse(raw);
 }
 
+function requireAdmin_(token) {
+  var session = validateToken(token);
+  if (!session || session.role !== 'admin') return null;
+  return session;
+}
+
+function getMySession(token) {
+  var session = validateToken(token);
+  if (!session) {
+    return { success: false, message: 'Sesi tidak valid, silakan login ulang.' };
+  }
+  return { success: true, session: session };
+}
+
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { hashPassword: hashPassword };
 }
