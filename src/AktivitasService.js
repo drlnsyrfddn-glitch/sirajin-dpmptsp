@@ -100,10 +100,12 @@ function extractDriveFileId_(url) {
 }
 
 function getBlobsFromDriveUrls_(urls) {
-  // Kembalikan array persis 3 elemen (slot kosong = null) supaya cocok
-  // dengan urutan {{FOTO_1}}/{{FOTO_2}}/{{FOTO_3}} di generateLaporanPdf.
-  var blobs = [null, null, null];
-  for (var i = 0; i < urls.length && i < 3; i++) {
+  // Kembalikan array persis 2 elemen (slot kosong = null) supaya cocok
+  // dengan urutan {{FOTO_1}}/{{FOTO_2}} di generateLaporanPdf. Laporan lama
+  // yang masih punya 3 URL foto (dari sebelum batas ini diperkecil) cuma
+  // 2 pertama yang ditampilkan ulang kalau laporan itu di-regenerate.
+  var blobs = [null, null];
+  for (var i = 0; i < urls.length && i < 2; i++) {
     var fileId = extractDriveFileId_(urls[i]);
     if (fileId) blobs[i] = DriveApp.getFileById(fileId).getBlob();
   }
@@ -155,8 +157,8 @@ function saveAktivitas(token, data) {
   if (!data.uraian || data.uraian.length === 0) {
     return { success: false, message: 'Uraian aktivitas minimal 1 poin.' };
   }
-  if (data.fotoBase64 && data.fotoBase64.length > 3) {
-    return { success: false, message: 'Maksimal 3 foto.' };
+  if (data.fotoBase64 && data.fotoBase64.length > 2) {
+    return { success: false, message: 'Maksimal 2 foto.' };
   }
 
   var sheet = getAktivitasSheet_();
@@ -187,7 +189,7 @@ function saveAktivitas(token, data) {
   // dikosongkan di form — artinya pegawai mempertahankan foto yang sudah
   // ada, bukan wajib unggah ulang tiap kali mengedit uraian/jam.
   if (!isEdit && (!data.fotoBase64 || data.fotoBase64.length === 0)) {
-    return { success: false, message: 'Foto minimal 1, maksimal 3.' };
+    return { success: false, message: 'Foto minimal 1, maksimal 2.' };
   }
 
   var linkFotoUrls;

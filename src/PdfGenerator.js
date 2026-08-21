@@ -48,7 +48,7 @@ function generateLaporanPdf(pegawai, laporan) {
   body.replaceText('{{NAMA_AKTIVITAS}}', laporan.namaAktivitas);
   body.replaceText('{{URAIAN}}', laporan.uraian.join('\n'));
 
-  for (var i = 0; i < 3; i++) {
+  for (var i = 0; i < 2; i++) {
     var placeholder = '{{FOTO_' + (i + 1) + '}}';
     insertImageAtPlaceholder(body, placeholder, laporan.fotoBlobs[i] || null);
   }
