@@ -26,11 +26,12 @@
 </style>
 <script>
   function requireAdminLogin() {
-    if (!getToken()) { window.location.href = '?page=admin-login'; }
+    if (!getToken()) { window.location.href = '?page=admin-login'; return true; }
+    return false;
   }
 
   function renderAdminNav() {
-    requireAdminLogin();
+    if (requireAdminLogin()) return;
 
     var topbarHtml = '<div class="admin-topbar">' +
       '<div class="admin-nav"><span class="admin-nav-brand">SiRajin Admin</span>' +
@@ -42,7 +43,7 @@
     google.script.run
       .withSuccessHandler(function (result) {
         if (!result.success) {
-          if (!handleSessionExpiry(result.message)) { window.location.href = '?page=admin-login'; }
+          if (!handleSessionExpiry(result.message, '?page=admin-login')) { window.location.href = '?page=admin-login'; }
           return;
         }
         var session = result.session;

@@ -82,10 +82,10 @@
   function requireLogin() {
     if (!getToken()) { window.location.href = '?page=login'; }
   }
-  function handleSessionExpiry(message) {
+  function handleSessionExpiry(message, redirectTo) {
     if (message && message.indexOf('login ulang') > -1) {
       clearToken();
-      window.location.href = '?page=login';
+      window.location.href = redirectTo || '?page=login';
       return true;
     }
     return false;
