@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+  <head><base target="_top"><?!= include('AdminShared'); ?></head>
+  <body>
+    <h1>Kelola Admin</h1>
+    <p class="error-message" id="aksesError" style="display:none;"></p>
+
+    <div id="kontenHalaman">
+      <button class="btn-primary" id="btnTambah" style="width:auto;">+ Tambah Admin</button>
+
+      <div class="card" id="formAdmin" style="display:none; margin-top:16px;">
+        <h3 id="formJudul">Tambah Admin</h3>
+        <input type="hidden" id="adminId">
+        <div class="field"><label for="aNip">NIP</label><input type="text" id="aNip" inputmode="numeric"></div>
+        <div class="field"><label for="aNama">Nama</label><input type="text" id="aNama"></div>
+        <div class="field"><label for="aLevel">Level</label>
+          <select id="aLevel"><option value="Admin">Admin</option><option value="SuperAdmin">SuperAdmin</option></select>
+        </div>
+        <div class="field"><label for="aPassword">Password (kosongkan kalau tidak ingin diubah saat edit)</label><input type="password" id="aPassword"></div>
+        <button class="btn-primary" id="btnSimpanAdmin" style="width:auto;">Simpan</button>
+        <button class="btn-ghost" id="btnBatalAdmin" style="width:auto;">Batal</button>
+        <p class="error-message" id="formError" style="display:none;"></p>
+      </div>
+
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead><tr><th>NIP</th><th>Nama</th><th>Level</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody id="tabelAdmin"><tr><td colspan="5" class="loading">Memuat...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      renderAdminNav();
+
+      var daftarAdmin = [];
+
+      function muatAdmin() {
+        google.script.run
+          .withSuccessHandler(function (result) {
+            if (!result.success) {
+              if (handleSessionExpiry(result.message, '?page=admin-login')) return;
+              document.getElementById('kontenHalaman').style.display = 'none';
+              var errEl = document.getElementById('aksesError');
+              errEl.textContent = result.message;
+              errEl.style.display = 'block';
+              return;
+            }
+            daftarAdmin = result.data;
+            renderTabel();
+          })
+          .withFailureHandler(function (error) { alert('Gagal memuat: ' + error.message); })
+          .listAdmin(getToken());
+      }
+
+      function renderTabel() {
+        var tbody = document.getElementById('tabelAdmin');
+        if (daftarAdmin.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="loading">Belum ada admin.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = daftarAdmin.map(function (a) {
+          var badge = a.status === 'Aktif' ? '<span class="badge badge-final">Aktif</span>' : '<span class="badge badge-error">Nonaktif</span>';
+          var aksiToggle = a.status === 'Aktif'
+            ? '<a href="#" onclick="toggleStatus(\'' + a.id + '\', \'Nonaktif\'); return false;">Nonaktifkan</a>'
+            : '<a href="#" onclick="toggleStatus(\'' + a.id + '\', \'Aktif\'); return false;">Aktifkan</a>';
+          return '<tr><td>' + a.nip + '</td><td>' + a.nama + '</td><td>' + a.level + '</td>' +
+            '<td>' + badge + '</td>' +
+            '<td><a href="#" onclick="editAdmin(\'' + a.id + '\'); return false;">Edit</a> | ' + aksiToggle + '</td></tr>';
+        }).join('');
+      }
+
+      function editAdmin(id) {
+        var a = daftarAdmin.filter(function (x) { return x.id === id; })[0];
+        if (!a) return;
+        document.getElementById('formJudul').textContent = 'Edit Admin';
+        document.getElementById('adminId').value = a.id;
+        document.getElementById('aNip').value = a.nip;
+        document.getElementById('aNama').value = a.nama;
+        document.getElementById('aLevel').value = a.level;
+        document.getElementById('aPassword').value = '';
+        document.getElementById('formAdmin').style.display = 'block';
+      }
+
+      function resetForm() {
+        document.getElementById('formJudul').textContent = 'Tambah Admin';
+        document.getElementById('adminId').value = '';
+        document.getElementById('aNip').value = '';
+        document.getElementById('aNama').value = '';
+        document.getElementById('aLevel').value = 'Admin';
+        document.getElementById('aPassword').value = '';
+        document.getElementById('formError').style.display = 'none';
+      }
+
+      document.getElementById('btnTambah').addEventListener('click', function () {
+        resetForm();
+        document.getElementById('formAdmin').style.display = 'block';
+      });
+
+      document.getElementById('btnBatalAdmin').addEventListener('click', function () {
+        document.getElementById('formAdmin').style.display = 'none';
+      });
+
+      document.getElementById('btnSimpanAdmin').addEventListener('click', function () {
+        var errorEl = document.getElementById('formError');
+        errorEl.style.display = 'none';
+
+        var id = document.getElementById('adminId').value || null;
+        var data = {
+          id: id,
+          nip: document.getElementById('aNip').value.trim(),
+          nama: document.getElementById('aNama').value.trim(),
+          level: document.getElementById('aLevel').value,
+          password: document.getElementById('aPassword').value
+        };
+
+        if (!data.nip || !data.nama) {
+          errorEl.textContent = 'NIP dan nama wajib diisi.';
+          errorEl.style.display = 'block';
+          return;
+        }
+        if (!id && !data.password) {
+          errorEl.textContent = 'Password wajib diisi untuk admin baru.';
+          errorEl.style.display = 'block';
+          return;
+        }
+
+        var btn = document.getElementById('btnSimpanAdmin');
+        btn.disabled = true;
+
+        google.script.run
+          .withSuccessHandler(function (result) {
+            btn.disabled = false;
+            if (result.success) {
+              document.getElementById('formAdmin').style.display = 'none';
+              muatAdmin();
+            } else {
+              if (!handleSessionExpiry(result.message, '?page=admin-login')) {
+                errorEl.textContent = result.message;
+                errorEl.style.display = 'block';
+              }
+            }
+          })
+          .withFailureHandler(function (error) {
+            btn.disabled = false;
+            errorEl.textContent = 'Gagal menyimpan: ' + error.message;
+            errorEl.style.display = 'block';
+          })
+          .saveAdmin(getToken(), data);
+      });
+
+      function toggleStatus(id, statusBaru) {
+        if (!confirm('Yakin ubah status admin ini jadi "' + statusBaru + '"?')) return;
+        google.script.run
+          .withSuccessHandler(function (result) {
+            if (result.success) { muatAdmin(); }
+            else if (!handleSessionExpiry(result.message, '?page=admin-login')) { alert(result.message); }
+          })
+          .withFailureHandler(function (error) { alert('Gagal: ' + error.message); })
+          .setAdminStatus(getToken(), id, statusBaru);
+      }
+
+      muatAdmin();
+    </script>
+  </body>
+</html>
