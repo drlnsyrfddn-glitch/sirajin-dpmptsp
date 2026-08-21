@@ -147,6 +147,21 @@
     el._sirajinTimer = setTimeout(function () { el.style.display = 'none'; }, 4000);
   }
 
+  // Masalah href relatif di atas gak cuma soal redirect lewat JS — SETIAP
+  // <a href="?page=..."> biasa di HTML (nav, tombol Edit/Tambah, dst) juga
+  // navigasi ke origin sandbox yang salah kalau diklik langsung, bikin
+  // halaman blank total. Daripada nambal href satu-satu di tiap file
+  // (termasuk yang dibikin dinamis lewat innerHTML), satu listener klik
+  // ter-delegasi di sini mencegat SEMUA link berformat itu dan
+  // reroute lewat redirectTop() — mencakup link yang ada sekarang maupun
+  // yang ditambahkan nanti.
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="?"]');
+    if (!a) return;
+    e.preventDefault();
+    redirectTop(a.getAttribute('href'));
+  });
+
   function requireLogin() {
     if (!getToken()) { redirectTop('?page=login', 'Sesi belum login. Klik di sini untuk masuk →'); }
   }

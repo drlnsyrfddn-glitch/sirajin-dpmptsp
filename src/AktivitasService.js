@@ -51,23 +51,6 @@ function rowToLaporan_(row) {
   };
 }
 
-// TEMP - debug Task 10, hapus setelah dipakai
-function debugDumpAktivitas(token) {
-  var session = validateToken(token);
-  if (!session) return { success: false, message: 'no session' };
-  var sheet = getAktivitasSheet_();
-  var rows = sheet.getDataRange().getValues();
-  // Bersihin baris test yang kepalanjur ditulis Date-object sebelum fix ini
-  for (var i = rows.length - 1; i >= 1; i--) {
-    if (rows[i][6] === 'Uji Coba Foto Rusak') sheet.deleteRow(i + 1);
-  }
-  rows = sheet.getDataRange().getValues();
-  var dump = rows.map(function (r) {
-    return r.map(function (c) { return typeof c + ':' + String(c); });
-  });
-  return { success: true, sessionNip: session.nip, dump: dump };
-}
-
 function listAktivitasByDate(token, tanggal) {
   var session = validateToken(token);
   if (!session || session.role !== 'pegawai') {

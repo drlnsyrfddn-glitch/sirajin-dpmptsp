@@ -16,8 +16,6 @@
     <script>
       requireLogin();
 
-      google.script.run.withSuccessHandler(function (r) { console.log('DEBUG_DUMP: ' + JSON.stringify(r)); }).debugDumpAktivitas(getToken());
-
       function formatBadge(status) {
         if (status === 'Final') return '<span class="badge badge-final">Tersimpan</span>';
         return '<span class="badge badge-draft">Draft</span>';

@@ -42,8 +42,15 @@
     <script>
       requireLogin();
 
-      var idLaporan = new URLSearchParams(window.location.search).get('id');
-      var isEditMode = !!idLaporan;
+      // window.location.search TIDAK bisa diandalkan di dalam iframe
+      // sandbox GAS (lihat catatan redirectTop di Shared.html - origin-nya
+      // beda dari URL exec yang keliatan di address bar). google.script.url
+      // .getLocation() adalah API resmi GAS buat baca parameter URL dari
+      // dalam sandbox - dipakai di sini, bukan URLSearchParams biasa.
+      // Ditemukan lewat verifikasi live Task 10: mode Edit selalu jatuh ke
+      // mode "Tambah" kosong, idLaporan selalu null.
+      var idLaporan = null;
+      var isEditMode = false;
 
       var jumlahPoin = 0;
       function tambahPoinUraian(nilaiAwal) {
@@ -58,35 +65,40 @@
 
       var today = new Date().toISOString().split('T')[0];
 
-      if (isEditMode) {
-        document.getElementById('judulHalaman').textContent = 'Edit Aktivitas';
-        document.getElementById('labelFoto').textContent = 'Foto Kegiatan (opsional saat edit)';
-        document.getElementById('fotoLamaInfo').style.display = 'block';
-        google.script.run
-          .withSuccessHandler(function (result) {
-            if (!result.success) {
-              if (!handleSessionExpiry(result.message)) {
-                document.getElementById('errorMsg').textContent = result.message;
-                document.getElementById('errorMsg').style.display = 'block';
+      google.script.url.getLocation(function (location) {
+        idLaporan = location.parameter.id || null;
+        isEditMode = !!idLaporan;
+
+        if (isEditMode) {
+          document.getElementById('judulHalaman').textContent = 'Edit Aktivitas';
+          document.getElementById('labelFoto').textContent = 'Foto Kegiatan (opsional saat edit)';
+          document.getElementById('fotoLamaInfo').style.display = 'block';
+          google.script.run
+            .withSuccessHandler(function (result) {
+              if (!result.success) {
+                if (!handleSessionExpiry(result.message)) {
+                  document.getElementById('errorMsg').textContent = result.message;
+                  document.getElementById('errorMsg').style.display = 'block';
+                }
+                return;
               }
-              return;
-            }
-            var l = result.data;
-            document.getElementById('tanggal').value = l.tanggal;
-            document.getElementById('jamMulai').value = l.jamMulai;
-            document.getElementById('jamSelesai').value = l.jamSelesai;
-            document.getElementById('namaAktivitas').value = l.namaAktivitas;
-            l.uraian.forEach(function (poin) { tambahPoinUraian(poin); });
-          })
-          .withFailureHandler(function (error) {
-            document.getElementById('errorMsg').textContent = 'Gagal memuat data: ' + error.message;
-            document.getElementById('errorMsg').style.display = 'block';
-          })
-          .getAktivitasById(getToken(), idLaporan);
-      } else {
-        document.getElementById('tanggal').value = today;
-        tambahPoinUraian(); // minimal 1 poin saat halaman dibuka mode "tambah baru"
-      }
+              var l = result.data;
+              document.getElementById('tanggal').value = l.tanggal;
+              document.getElementById('jamMulai').value = l.jamMulai;
+              document.getElementById('jamSelesai').value = l.jamSelesai;
+              document.getElementById('namaAktivitas').value = l.namaAktivitas;
+              l.uraian.forEach(function (poin) { tambahPoinUraian(poin); });
+            })
+            .withFailureHandler(function (error) {
+              document.getElementById('errorMsg').textContent = 'Gagal memuat data: ' + error.message;
+              document.getElementById('errorMsg').style.display = 'block';
+            })
+            .getAktivitasById(getToken(), idLaporan);
+        } else {
+          document.getElementById('tanggal').value = today;
+          tambahPoinUraian(); // minimal 1 poin saat halaman dibuka mode "tambah baru"
+        }
+      });
 
       // onError: file rusak/bukan gambar (mis. HEIC yang gak didukung browser,
       // file kepotong pas upload) bikin FileReader/Image gagal diam-diam tanpa
