@@ -1,7 +1,35 @@
+// Setup.js sudah set kolom Tanggal/Jam Mulai/Jam Selesai ke format '@'
+// (plain text), tapi itu cuma format TAMPILAN — appendRow()/setValues()
+// tetap mengonversi string berbentuk tanggal/jam ("2026-08-21", "08:00")
+// jadi objek Date/waktu asli sebelum ditulis, terlepas dari format kolom.
+// Ditemukan lewat verifikasi live Task 10: listAktivitasByDate jadi selalu
+// kosong (Date !== string di perbandingan ===), dan generateLaporanPdf akan
+// crash (manggil .split('-') di objek Date). Prefix tanda kutip satu adalah
+// konvensi Sheets buat memaksa nilai tetap teks literal — tidak ikut
+// tersimpan sebagai bagian dari nilainya, jadi getValues() baca balik string
+// aslinya tanpa tanda kutip.
+function sebagaiTeks_(value) {
+  return "'" + value;
+}
+
 function getAktivitasSheet_() {
   var props = PropertiesService.getScriptProperties();
   var ss = SpreadsheetApp.openById(props.getProperty('SPREADSHEET_ID'));
   return ss.getSheetByName('Aktivitas');
+}
+
+// Waktu Dibuat/Diubah/Finalisasi disimpan sebagai Date asli di Sheets
+// (bukan dipaksa teks seperti Tanggal/Jam - itu memang perlu tetap jadi
+// value waktu asli). Tapi ngirim object Date mentah balik lewat
+// google.script.run bikin serialisasi ke client GAGAL TOTAL (bukan cuma
+// field itu yang null - seluruh `result` yang diterima withSuccessHandler
+// jadi null, keliatannya bug/limitasi serialisasi Apps Script pas nemu
+// Date di dalam object bersarang). Ditemukan lewat verifikasi live Task 10 -
+// listAktivitasByDate/getAktivitasById selalu gagal begitu ada baris yang
+// cocok. Ubah ke ISO string dulu sebelum keluar dari fungsi.
+function formatWaktu_(v) {
+  if (v instanceof Date) return v.toISOString();
+  return v || '';
 }
 
 function rowToLaporan_(row) {
@@ -17,10 +45,27 @@ function rowToLaporan_(row) {
     linkFoto: String(row[8]).split('|').filter(Boolean),
     linkPdf: row[9],
     status: row[10],
-    waktuDibuat: row[11],
-    waktuDiubah: row[12],
-    waktuFinalisasi: row[13]
+    waktuDibuat: formatWaktu_(row[11]),
+    waktuDiubah: formatWaktu_(row[12]),
+    waktuFinalisasi: formatWaktu_(row[13])
   };
+}
+
+// TEMP - debug Task 10, hapus setelah dipakai
+function debugDumpAktivitas(token) {
+  var session = validateToken(token);
+  if (!session) return { success: false, message: 'no session' };
+  var sheet = getAktivitasSheet_();
+  var rows = sheet.getDataRange().getValues();
+  // Bersihin baris test yang kepalanjur ditulis Date-object sebelum fix ini
+  for (var i = rows.length - 1; i >= 1; i--) {
+    if (rows[i][6] === 'Uji Coba Foto Rusak') sheet.deleteRow(i + 1);
+  }
+  rows = sheet.getDataRange().getValues();
+  var dump = rows.map(function (r) {
+    return r.map(function (c) { return typeof c + ':' + String(c); });
+  });
+  return { success: true, sessionNip: session.nip, dump: dump };
 }
 
 function listAktivitasByDate(token, tanggal) {
@@ -181,7 +226,7 @@ function saveAktivitas(token, data) {
 
   if (isEdit) {
     sheet.getRange(rowIndex, 3, 1, 12).setValues([[
-      data.tanggal, data.jamMulai, data.jamSelesai, durasi, data.namaAktivitas,
+      sebagaiTeks_(data.tanggal), sebagaiTeks_(data.jamMulai), sebagaiTeks_(data.jamSelesai), durasi, data.namaAktivitas,
       data.uraian.join('\n'), linkFotoUrls.join('|'), pdfUrl,
       existingRow[10], // status tidak berubah lewat edit biasa (dipisah dari finalizeAktivitas)
       existingRow[11], now, existingRow[13]
@@ -191,7 +236,7 @@ function saveAktivitas(token, data) {
 
   var idBaru = Utilities.getUuid();
   sheet.appendRow([
-    idBaru, session.nip, data.tanggal, data.jamMulai, data.jamSelesai, durasi,
+    idBaru, session.nip, sebagaiTeks_(data.tanggal), sebagaiTeks_(data.jamMulai), sebagaiTeks_(data.jamSelesai), durasi,
     data.namaAktivitas, data.uraian.join('\n'), linkFotoUrls.join('|'), pdfUrl,
     'Draft', now, now, ''
   ]);
