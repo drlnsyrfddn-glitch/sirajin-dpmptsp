@@ -29,9 +29,12 @@
           return;
         }
         container.innerHTML = list.map(function (l) {
-          return '<div class="card">' +
+          var kelasCard = l.status === 'Final' ? 'card card--final' : 'card card--draft';
+          var poinPertama = (l.uraian && l.uraian[0]) ? l.uraian[0] : '';
+          return '<div class="' + kelasCard + '">' +
             '<span class="waktu-aktivitas">' + l.jamMulai + ' - ' + l.jamSelesai + '</span> ' + formatBadge(l.status) +
             '<p>' + l.namaAktivitas + '</p>' +
+            (poinPertama ? '<p class="card-preview">' + poinPertama + (l.uraian.length > 1 ? ' &hellip;' : '') + '</p>' : '') +
             '<a href="' + l.linkPdf + '" target="_blank">Unduh PDF</a>' +
             ' | <a href="?page=aktivitas/tambah&id=' + l.idLaporan + '">Edit</a>' +
             (l.status === 'Draft' ? ' | <a href="#" onclick="hapusLaporan(\'' + l.idLaporan + '\'); return false;">Hapus</a> | <a href="#" onclick="finalisasiLaporan(\'' + l.idLaporan + '\'); return false;">Finalisasi</a>' : '') +
