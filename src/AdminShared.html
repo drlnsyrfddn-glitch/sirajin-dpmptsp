@@ -5,32 +5,34 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 20px;
-    border-bottom: 1px solid var(--border);
-    margin: -16px -16px 24px -16px;
-    background: var(--paper);
+    margin: -16px -16px 0 -16px;
+    background: var(--navy-900);
+    color: #fff;
     flex-wrap: wrap;
     gap: 8px;
   }
   .admin-nav { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
   .admin-nav a {
     display: inline-flex; align-items: center; gap: 6px;
-    color: var(--ink-600); text-decoration: none; font-size: 14px; font-weight: 600;
+    color: rgba(255,255,255,0.75); text-decoration: none; font-size: 14px; font-weight: 600;
     padding: 6px 10px; border-radius: 6px;
     transition: color 150ms ease, background-color 150ms ease;
   }
   .admin-nav a svg { flex: none; }
-  .admin-nav a:hover { color: var(--blue-600); background: var(--blue-100); }
-  .admin-nav a.active { color: var(--blue-600); background: var(--blue-100); }
-  .admin-nav-brand { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--ink-900); font-size: 16px; margin-right: 8px; }
-  .admin-user { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--ink-600); }
-  .admin-user a { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-600); text-decoration: none; font-weight: 600; }
-  .admin-user a:hover { color: var(--danger); }
+  .admin-nav a:hover { color: #fff; background: rgba(255,255,255,0.12); }
+  .admin-nav a.active { color: var(--gold-600); background: rgba(255,255,255,0.12); }
+  .admin-nav-brand { display: flex; align-items: center; gap: 8px; font-weight: 700; color: #fff; font-size: 16px; margin-right: 8px; }
+  .admin-nav-brand .lambang-logo { width: 24px; }
+  .admin-user { display: flex; align-items: center; gap: 12px; font-size: 14px; color: rgba(255,255,255,0.75); }
+  .admin-user a { display: inline-flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.75); text-decoration: none; font-weight: 600; }
+  .admin-user a:hover { color: #fff; }
+  .admin-pita { margin: 0 -16px 24px -16px; width: auto; }
   .admin-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
   .admin-table th, .admin-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
   .admin-table th { background: var(--surface); text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: var(--ink-600); }
   .table-wrap { overflow-x: auto; }
-  .stat-card { display: inline-block; min-width: 160px; padding: 20px; background: var(--paper); border-radius: 10px; margin-right: 12px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(35,131,226,0.06), 0 4px 12px rgba(35,131,226,0.05); }
-  .stat-number { font-size: 32px; font-weight: 700; color: var(--ink-900); }
+  .stat-card { display: inline-block; min-width: 160px; padding: 20px; background: var(--paper); border-radius: 10px; margin-right: 12px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(22,58,107,0.06), 0 4px 12px rgba(22,58,107,0.05); }
+  .stat-number { font-size: 32px; font-weight: 700; color: var(--gold-600); }
   .stat-label { font-size: 12px; color: var(--ink-600); text-transform: uppercase; }
 </style>
 <script>
@@ -67,10 +69,11 @@
     if (requireAdminLogin()) return;
 
     var topbarHtml = '<header class="admin-topbar">' +
-      '<div class="admin-nav-brand">' + ADMIN_NAV_ICONS.dashboard + ' SiRajin Admin</div>' +
+      '<div class="admin-nav-brand"><img class="lambang-logo" src="' + SIRAJIN_LOGO_SRC + '" alt="Lambang Kabupaten Morowali"> SiRajin Admin</div>' +
       '<nav class="admin-nav" id="adminNavLinks"></nav>' +
       '<div class="admin-user"><span id="adminUserName"></span>' +
-      '<a href="#" onclick="adminLogout(); return false;">' + ADMIN_NAV_ICONS.keluar + ' Keluar</a></div></header>';
+      '<a href="#" onclick="adminLogout(); return false;">' + ADMIN_NAV_ICONS.keluar + ' Keluar</a></div></header>' +
+      '<div class="pita-lambang admin-pita"><span></span><span></span><span></span><span></span></div>';
     document.body.insertAdjacentHTML('afterbegin', topbarHtml);
 
     google.script.run
