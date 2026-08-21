@@ -21,6 +21,7 @@
 - `listAdmin` never returns the password hash to the frontend, under any circumstance.
 - **Kelola Laporan is read-only browse + filter + open-PDF.** Per spec §12, admin cannot edit/delete laporan content. This plan does **not** implement a per-laporan "tandai bermasalah" flag — that capability was never precisely specified during brainstorming and a real one would need a new status value plus UI; for now, deactivating the pegawai's account (already in scope) is the available remedy for a problematic pegawai. Flag this to the product owner as a known deferred capability, not a bug.
 - Palette/typography/mobile rules from `design.md` apply to admin pages too, except admin pages are desktop-first (per spec: tables scroll horizontally on narrow screens rather than reflowing to single-column cards).
+- `handleSessionExpiry(message, redirectTo)` (Plan 1's `Shared.html`) takes an optional second argument — every admin-page call site in this plan passes `'?page=admin-login'` explicitly so an expired admin session redirects to the admin login screen, not the pegawai one. Pegawai pages (Plan 1) keep calling it with 1 argument and default to `'?page=login'` unchanged. See Task 1's amendment note.
 
 ---
 
@@ -136,7 +137,7 @@ menjadi:
     google.script.run
       .withSuccessHandler(function (result) {
         if (!result.success) {
-          if (!handleSessionExpiry(result.message)) { window.location.href = '?page=admin-login'; }
+          if (!handleSessionExpiry(result.message, '?page=admin-login')) { window.location.href = '?page=admin-login'; }
           return;
         }
         var session = result.session;
@@ -167,6 +168,79 @@ menjadi:
 ```bash
 git add src/Auth.js src/Code.js src/AdminShared.html
 git commit -m "feat: add admin routing, session helper, and shared admin shell"
+```
+
+- [ ] **Step 5: Amandemen — buat `handleSessionExpiry` sadar tujuan redirect berbeda**
+
+*(Ditemukan lewat task review: `handleSessionExpiry` bawaan Plan 1 selalu redirect ke `?page=login` — kalau dipakai apa adanya di halaman admin, sesi admin yang kedaluwarsa malah dilempar ke login pegawai. Perbaiki di sumbernya sebelum task-task lain memakainya berulang kali.)*
+
+Ganti `handleSessionExpiry` di `src/Shared.html` dari:
+
+```js
+  function handleSessionExpiry(message) {
+    if (message && message.indexOf('login ulang') > -1) {
+      clearToken();
+      window.location.href = '?page=login';
+      return true;
+    }
+    return false;
+  }
+```
+
+menjadi (tambah parameter kedua opsional, default tetap `?page=login` — halaman pegawai dari Plan 1 yang manggil dengan 1 argumen tidak perlu diubah):
+
+```js
+  function handleSessionExpiry(message, redirectTo) {
+    if (message && message.indexOf('login ulang') > -1) {
+      clearToken();
+      window.location.href = redirectTo || '?page=login';
+      return true;
+    }
+    return false;
+  }
+```
+
+Lalu di `src/AdminShared.html`, ganti baris pemanggilan di dalam `renderAdminNav()`:
+
+```js
+          if (!handleSessionExpiry(result.message)) { window.location.href = '?page=admin-login'; }
+```
+
+menjadi:
+
+```js
+          if (!handleSessionExpiry(result.message, '?page=admin-login')) { window.location.href = '?page=admin-login'; }
+```
+
+Sekalian benerin `requireAdminLogin()` yang juga ditemukan reviewer (redirect tanpa `return`, bisa balapan sama request `getMySession` yang jalan pakai token `null`) — ganti:
+
+```js
+  function requireAdminLogin() {
+    if (!getToken()) { window.location.href = '?page=admin-login'; }
+  }
+```
+
+menjadi:
+
+```js
+  function requireAdminLogin() {
+    if (!getToken()) { window.location.href = '?page=admin-login'; return true; }
+    return false;
+  }
+```
+
+lalu di `renderAdminNav()`, tambahkan early-return setelah pemanggilannya:
+
+```js
+  function renderAdminNav() {
+    if (requireAdminLogin()) return;
+```
+
+Commit:
+
+```bash
+git add src/Shared.html src/AdminShared.html
+git commit -m "fix: pass admin-login redirect target through handleSessionExpiry"
 ```
 
 ---
@@ -409,7 +483,7 @@ git commit -m "feat: add pegawai CRUD service with soft-delete status toggle"
         google.script.run
           .withSuccessHandler(function (result) {
             if (!result.success) {
-              if (!handleSessionExpiry(result.message)) { alert(result.message); }
+              if (!handleSessionExpiry(result.message, '?page=admin-login')) { alert(result.message); }
               return;
             }
             daftarPegawai = result.data;
@@ -495,7 +569,7 @@ git commit -m "feat: add pegawai CRUD service with soft-delete status toggle"
               document.getElementById('formPegawai').style.display = 'none';
               muatPegawai();
             } else {
-              if (!handleSessionExpiry(result.message)) {
+              if (!handleSessionExpiry(result.message, '?page=admin-login')) {
                 errorEl.textContent = result.message;
                 errorEl.style.display = 'block';
               }
@@ -514,7 +588,7 @@ git commit -m "feat: add pegawai CRUD service with soft-delete status toggle"
         google.script.run
           .withSuccessHandler(function (result) {
             if (result.success) { muatPegawai(); }
-            else if (!handleSessionExpiry(result.message)) { alert(result.message); }
+            else if (!handleSessionExpiry(result.message, '?page=admin-login')) { alert(result.message); }
           })
           .withFailureHandler(function (error) { alert('Gagal: ' + error.message); })
           .setPegawaiStatus(getToken(), id, statusBaru);
@@ -724,7 +798,7 @@ git commit -m "feat: add dashboard summary and read-only laporan archive service
         google.script.run
           .withSuccessHandler(function (result) {
             if (!result.success) {
-              if (!handleSessionExpiry(result.message)) {
+              if (!handleSessionExpiry(result.message, '?page=admin-login')) {
                 document.getElementById('ringkasan').innerHTML = '<p class="error-message">' + result.message + '</p>';
               }
               return;
@@ -842,7 +916,7 @@ git commit -m "feat: add admin compliance dashboard page"
         google.script.run
           .withSuccessHandler(function (result) {
             if (!result.success) {
-              if (!handleSessionExpiry(result.message)) {
+              if (!handleSessionExpiry(result.message, '?page=admin-login')) {
                 document.getElementById('tabelArsip').innerHTML = '<tr><td colspan="7" class="error-message">' + result.message + '</td></tr>';
               }
               return;
@@ -1055,7 +1129,7 @@ Halaman ini tetap dapat diakses lewat URL oleh Admin biasa (bukan cuma SuperAdmi
         google.script.run
           .withSuccessHandler(function (result) {
             if (!result.success) {
-              if (handleSessionExpiry(result.message)) return;
+              if (handleSessionExpiry(result.message, '?page=admin-login')) return;
               document.getElementById('kontenHalaman').style.display = 'none';
               var errEl = document.getElementById('aksesError');
               errEl.textContent = result.message;
@@ -1151,7 +1225,7 @@ Halaman ini tetap dapat diakses lewat URL oleh Admin biasa (bukan cuma SuperAdmi
               document.getElementById('formAdmin').style.display = 'none';
               muatAdmin();
             } else {
-              if (!handleSessionExpiry(result.message)) {
+              if (!handleSessionExpiry(result.message, '?page=admin-login')) {
                 errorEl.textContent = result.message;
                 errorEl.style.display = 'block';
               }
@@ -1170,7 +1244,7 @@ Halaman ini tetap dapat diakses lewat URL oleh Admin biasa (bukan cuma SuperAdmi
         google.script.run
           .withSuccessHandler(function (result) {
             if (result.success) { muatAdmin(); }
-            else if (!handleSessionExpiry(result.message)) { alert(result.message); }
+            else if (!handleSessionExpiry(result.message, '?page=admin-login')) { alert(result.message); }
           })
           .withFailureHandler(function (error) { alert('Gagal: ' + error.message); })
           .setAdminStatus(getToken(), id, statusBaru);
