@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+  <head><base target="_top"><?!= include('Shared'); ?></head>
+  <body>
+    <h1>Aktivitas Saya</h1>
+    <div class="field">
+      <label for="tanggal">Tanggal</label>
+      <input type="date" id="tanggal">
+    </div>
+    <div id="daftarLaporan"><p class="loading">Memuat...</p></div>
+    <a href="?page=aktivitas/tambah"><button class="btn-primary">+ Tambah Aktivitas</button></a>
+
+    <script>
+      requireLogin();
+
+      function formatBadge(status) {
+        if (status === 'Final') return '<span class="badge badge-final">Tersimpan</span>';
+        return '<span class="badge badge-draft">Draft</span>';
+      }
+
+      function renderLaporan(list) {
+        var container = document.getElementById('daftarLaporan');
+        if (list.length === 0) {
+          container.innerHTML = '<p class="loading">Belum ada laporan untuk tanggal ini.</p>';
+          return;
+        }
+        container.innerHTML = list.map(function (l) {
+          return '<div class="card">' +
+            '<strong>' + l.jamMulai + ' - ' + l.jamSelesai + '</strong> ' + formatBadge(l.status) +
+            '<p>' + l.namaAktivitas + '</p>' +
+            '<a href="' + l.linkPdf + '" target="_blank">Unduh PDF</a>' +
+            ' | <a href="?page=aktivitas/tambah&id=' + l.idLaporan + '">Edit</a>' +
+            (l.status === 'Draft' ? ' | <a href="#" onclick="hapusLaporan(\'' + l.idLaporan + '\'); return false;">Hapus</a> | <a href="#" onclick="finalisasiLaporan(\'' + l.idLaporan + '\'); return false;">Finalisasi</a>' : '') +
+            '</div>';
+        }).join('');
+      }
+
+      function muatLaporan() {
+        var tanggal = document.getElementById('tanggal').value;
+        document.getElementById('daftarLaporan').innerHTML = '<p class="loading">Memuat...</p>';
+        google.script.run
+          .withSuccessHandler(function (result) {
+            if (result.success) {
+              renderLaporan(result.data);
+            } else {
+              document.getElementById('daftarLaporan').innerHTML = '<p class="error-message">' + result.message + '</p>';
+              if (result.message.indexOf('login ulang') > -1) { clearToken(); window.location.href = '?page=login'; }
+            }
+          })
+          .withFailureHandler(function (error) {
+            document.getElementById('daftarLaporan').innerHTML = '<p class="error-message">Gagal memuat: ' + error.message + '</p>';
+          })
+          .listAktivitasByDate(getToken(), tanggal);
+      }
+
+      function hapusLaporan(id) {
+        if (!confirm('Yakin hapus laporan ini?')) return;
+        google.script.run
+          .withSuccessHandler(function (result) {
+            if (result.success) { muatLaporan(); } else { alert(result.message); }
+          })
+          .withFailureHandler(function (error) { alert('Gagal: ' + error.message); })
+          .deleteAktivitas(getToken(), id);
+      }
+
+      function finalisasiLaporan(id) {
+        if (!confirm('Setelah difinalisasi, laporan tidak bisa dihapus. Lanjutkan?')) return;
+        google.script.run
+          .withSuccessHandler(function (result) {
+            if (result.success) { muatLaporan(); } else { alert(result.message); }
+          })
+          .withFailureHandler(function (error) { alert('Gagal: ' + error.message); })
+          .finalizeAktivitas(getToken(), id);
+      }
+
+      var today = new Date().toISOString().split('T')[0];
+      document.getElementById('tanggal').value = today;
+      document.getElementById('tanggal').addEventListener('change', muatLaporan);
+      muatLaporan();
+    </script>
+  </body>
+</html>
