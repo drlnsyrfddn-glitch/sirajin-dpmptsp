@@ -1476,7 +1476,7 @@ Buka URL Web App dari Step 1, lalu:
 - [ ] Coba akses `deleteAktivitas` untuk laporan Final langsung lewat console browser (`google.script.run.deleteAktivitas(token, idLaporanFinal)`) — harus ditolak backend meski tombol UI sudah hilang
 - [ ] Klik Edit pada laporan Draft, ubah nama aktivitas tanpa pilih foto baru → tersimpan, foto lama tetap ada di PDF baru
 - [ ] Klik Edit pada laporan Final, ubah uraian → tersimpan, status tetap Final, PDF ter-update sesuai uraian baru
-- [ ] Klik Edit, ganti salah satu foto dengan foto baru → PDF hasil generate memakai foto baru, bukan foto lama
+- [ ] Klik Edit, ganti salah satu foto dengan foto baru (foto lain dibiarkan kosong) → PDF hasil generate memakai foto baru **DAN** sesuai teks di halaman ("unggah foto baru mengganti SEMUA foto lama"), foto-foto lain yang tidak dipilih ulang memang hilang dari laporan — bukan tertinggal diam-diam tanpa peringatan (ditemukan saat final review: sebelumnya checklist ini cuma cek foto baru muncul, tidak cek foto lama yang seharusnya dipertahankan malah hilang)
 - [ ] Buka dari HP: layout 1 kolom, tombol full-width, input foto langsung membuka kamera
 - [ ] Ganti tanggal di halaman Aktivitas ke hari sebelumnya (kosong) → tampil pesan "Belum ada laporan"
 - [ ] Tutup tab, buka lagi Web App → diminta login ulang (sessionStorage kosong, sesuai desain)
