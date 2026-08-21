@@ -11,6 +11,7 @@
     </div>
 
     <div id="ringkasan"><p class="loading">Memuat...</p></div>
+    <div id="progresLapor"></div>
 
     <h3>Belum Lapor</h3>
     <div id="belumLapor"><p class="loading">Memuat...</p></div>
@@ -48,19 +49,33 @@
             }
             var d = result.data;
 
+            var persen = d.totalPegawaiAktif > 0
+              ? Math.round((d.sudahLapor / d.totalPegawaiAktif) * 100)
+              : 0;
+
             document.getElementById('ringkasan').innerHTML =
               '<div class="stat-card"><div class="stat-number">' + d.totalPegawaiAktif + '</div><div class="stat-label">Pegawai Aktif</div></div>' +
-              '<div class="stat-card"><div class="stat-number">' + d.sudahLapor + '</div><div class="stat-label">Sudah Lapor</div></div>' +
-              '<div class="stat-card"><div class="stat-number">' + d.belumLapor.length + '</div><div class="stat-label">Belum Lapor</div></div>';
+              '<div class="stat-card stat-card--success"><div class="stat-number">' + d.sudahLapor + '</div><div class="stat-label">Sudah Lapor</div></div>' +
+              '<div class="stat-card stat-card--warning"><div class="stat-number">' + d.belumLapor.length + '</div><div class="stat-label">Belum Lapor</div></div>';
+
+            document.getElementById('progresLapor').innerHTML =
+              '<div class="progress-track"><div class="progress-fill" style="width:' + persen + '%;"></div></div>' +
+              '<div class="progress-caption"><span>' + d.sudahLapor + ' dari ' + d.totalPegawaiAktif + ' pegawai sudah lapor</span><span>' + persen + '%</span></div>';
 
             document.getElementById('belumLapor').innerHTML = d.belumLapor.length === 0
               ? '<p class="loading">Semua pegawai aktif sudah lapor.</p>'
-              : '<ul>' + d.belumLapor.map(function (p) { return '<li>' + escapeHtml(p.nama) + ' (' + escapeHtml(p.nip) + ')</li>'; }).join('') + '</ul>';
+              : '<ul class="person-list">' + d.belumLapor.map(function (p) {
+                  return '<li>' + avatarHtml(p.nama) +
+                    '<span><span class="person-nama">' + escapeHtml(p.nama) + '</span><br>' +
+                    '<span class="person-nip">' + escapeHtml(p.nip) + '</span></span></li>';
+                }).join('') + '</ul>';
 
             document.getElementById('tabelJam').innerHTML = d.rekapJam.length === 0
               ? '<tr><td colspan="3" class="loading">Belum ada laporan Final untuk tanggal ini.</td></tr>'
               : d.rekapJam.map(function (r) {
-                  return '<tr><td>' + escapeHtml(r.nip) + '</td><td>' + escapeHtml(r.nama) + '</td><td>' + formatMenitJam(r.totalMenit) + '</td></tr>';
+                  return '<tr><td>' + escapeHtml(r.nip) + '</td>' +
+                    '<td><span class="avatar-row">' + avatarHtml(r.nama) + escapeHtml(r.nama) + '</span></td>' +
+                    '<td>' + formatMenitJam(r.totalMenit) + '</td></tr>';
                 }).join('');
           })
           .withFailureHandler(function (error) {

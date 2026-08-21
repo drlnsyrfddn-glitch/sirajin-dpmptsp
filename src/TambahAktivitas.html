@@ -6,33 +6,45 @@
     <h1 id="judulHalaman" class="h1-compact">Tambah Aktivitas</h1>
     <div class="pita-lambang" style="margin-bottom:16px;"><span></span><span></span><span></span><span></span></div>
 
-    <div class="field">
-      <label for="tanggal">Tanggal</label>
-      <input type="date" id="tanggal">
-    </div>
-    <div class="field">
-      <label for="jamMulai">Jam Mulai</label>
-      <input type="time" id="jamMulai">
-    </div>
-    <div class="field">
-      <label for="jamSelesai">Jam Selesai</label>
-      <input type="time" id="jamSelesai">
-    </div>
-    <div class="field">
-      <label for="namaAktivitas">Nama Aktivitas</label>
-      <input type="text" id="namaAktivitas" placeholder="Mis. Monitoring Jaringan MPP">
-    </div>
-    <div class="field">
-      <label>Uraian Aktivitas</label>
+    <section class="form-section">
+      <p class="eyebrow">Waktu &amp; Tanggal</p>
+      <div class="field">
+        <label for="tanggal">Tanggal</label>
+        <input type="date" id="tanggal">
+      </div>
+      <div class="field">
+        <label for="jamMulai">Jam Mulai</label>
+        <input type="time" id="jamMulai">
+      </div>
+      <div class="field">
+        <label for="jamSelesai">Jam Selesai</label>
+        <input type="time" id="jamSelesai">
+      </div>
+    </section>
+
+    <section class="form-section">
+      <p class="eyebrow">Aktivitas</p>
+      <div class="field">
+        <label for="namaAktivitas">Nama Aktivitas</label>
+        <input type="text" id="namaAktivitas" placeholder="Mis. Monitoring Jaringan MPP">
+      </div>
+    </section>
+
+    <section class="form-section">
+      <p class="eyebrow">Uraian Kegiatan</p>
       <div id="daftarUraian"></div>
       <button type="button" class="btn-ghost" id="btnTambahPoin">+ Tambah Poin</button>
-    </div>
-    <div class="field">
-      <label id="labelFoto">Foto Kegiatan (1-2 foto)</label>
-      <p class="loading" id="fotoLamaInfo" style="display:none;">Laporan ini sudah punya foto. Kosongkan SEMUA kolom foto di bawah untuk mempertahankan foto lama apa adanya. Kalau kamu pilih foto baru di salah satu kolom saja, SEMUA foto lama akan diganti dengan foto yang baru kamu pilih (bukan cuma slot yang kamu isi) — jadi pilih ulang semua foto yang masih ingin kamu pakai.</p>
-      <input type="file" id="foto1" accept="image/*" capture="environment">
-      <input type="file" id="foto2" accept="image/*" capture="environment">
-    </div>
+    </section>
+
+    <section class="form-section">
+      <p class="eyebrow">Foto Kegiatan</p>
+      <div class="field">
+        <label id="labelFoto">Foto Kegiatan (1-2 foto)</label>
+        <p class="loading" id="fotoLamaInfo" style="display:none;">Laporan ini sudah punya foto. Kosongkan SEMUA kolom foto di bawah untuk mempertahankan foto lama apa adanya. Kalau kamu pilih foto baru di salah satu kolom saja, SEMUA foto lama akan diganti dengan foto yang baru kamu pilih (bukan cuma slot yang kamu isi) — jadi pilih ulang semua foto yang masih ingin kamu pakai.</p>
+        <input type="file" id="foto1" accept="image/*" capture="environment">
+        <input type="file" id="foto2" accept="image/*" capture="environment">
+      </div>
+    </section>
 
     <button class="btn-primary" id="btnSimpan">Simpan Laporan</button>
     <p class="error-message" id="errorMsg" style="display:none;"></p>
@@ -57,7 +69,8 @@
         jumlahPoin++;
         var div = document.createElement('div');
         div.className = 'field';
-        div.innerHTML = '<input type="text" class="uraian-poin" placeholder="Poin uraian ke-' + jumlahPoin + '">';
+        div.innerHTML = '<div class="avatar-row"><span class="circle-badge">' + jumlahPoin + '</span>' +
+          '<input type="text" class="uraian-poin" placeholder="Poin uraian ke-' + jumlahPoin + '"></div>';
         document.getElementById('daftarUraian').appendChild(div);
         if (nilaiAwal) div.querySelector('input').value = nilaiAwal;
       }

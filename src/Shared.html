@@ -131,6 +131,51 @@
 
   .waktu-aktivitas { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink-900); }
   h1.h1-compact { font-size: 22px; line-height: 1.25; margin: 0 0 12px; }
+
+  /* Bulatan kecil berisi inisial nama (tabel pegawai/admin, daftar belum
+     lapor, rekap jam). Satu warna netral-navy buat semua orang — sengaja
+     tidak diacak per-orang supaya tidak terbaca sebagai penanda status. */
+  .avatar-initial {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; flex: none;
+    border-radius: 50%;
+    background: var(--navy-100); color: var(--navy-900);
+    font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+  /* Bulatan bernomor buat poin uraian di form Tambah Aktivitas. */
+  .circle-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; flex: none;
+    border-radius: 50%;
+    background: var(--navy-100); color: var(--navy-900);
+    font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  }
+  .avatar-row { display: flex; align-items: center; gap: 10px; }
+  .avatar-row > input { flex: 1; min-width: 0; }
+
+  .badge-aktif { background: #E7F5EC; color: var(--success); }
+  .badge-nonaktif { background: var(--surface); color: var(--ink-600); }
+
+  .progress-track { height: 8px; border-radius: 999px; background: var(--surface); overflow: hidden; margin: 4px 0 6px; }
+  .progress-fill { height: 100%; background: var(--navy-600); border-radius: 999px; transition: width 200ms ease; }
+  .progress-caption { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-600); margin-bottom: 12px; }
+
+  /* Label kecil di atas tiap grup field (form Tambah Aktivitas). */
+  .eyebrow {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-600); margin: 0 0 8px;
+  }
+  .eyebrow::before { content: ''; width: 16px; height: 2px; background: var(--gold-600); flex: none; }
+  .form-section {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  .form-section .field:last-child { margin-bottom: 0; }
 </style>
 <script>
   // Apps Script menjalankan halaman di dalam iframe sandbox dengan
