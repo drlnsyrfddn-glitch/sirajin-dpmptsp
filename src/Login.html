@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head><base target="_top"><?!= include('Shared'); ?></head>
+  <body>
+    <h1>Login Pegawai</h1>
+    <div class="field">
+      <label for="nip">NIP</label>
+      <input type="text" id="nip" inputmode="numeric" placeholder="19920815 202421 1 005" autofocus>
+    </div>
+    <button class="btn-primary" id="btnLogin">Masuk</button>
+    <p class="error-message" id="errorMsg" style="display:none;"></p>
+
+    <script>
+      document.getElementById('btnLogin').addEventListener('click', function () {
+        var nip = document.getElementById('nip').value.trim();
+        var btn = document.getElementById('btnLogin');
+        var errorEl = document.getElementById('errorMsg');
+        errorEl.style.display = 'none';
+
+        if (!nip) {
+          errorEl.textContent = 'NIP wajib diisi.';
+          errorEl.style.display = 'block';
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Memproses...';
+
+        google.script.run
+          .withSuccessHandler(function (result) {
+            btn.disabled = false;
+            btn.textContent = 'Masuk';
+            if (result.success) {
+              setToken(result.token);
+              window.location.href = '?page=aktivitas';
+            } else {
+              errorEl.textContent = result.message;
+              errorEl.style.display = 'block';
+            }
+          })
+          .withFailureHandler(function (error) {
+            btn.disabled = false;
+            btn.textContent = 'Masuk';
+            errorEl.textContent = 'Gagal terhubung ke server: ' + error.message + '. Coba lagi.';
+            errorEl.style.display = 'block';
+          })
+          .loginPegawai(nip);
+      });
+    </script>
+  </body>
+</html>
