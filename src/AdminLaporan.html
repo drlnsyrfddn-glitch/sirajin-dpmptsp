@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+  <head><base target="_top"><?!= include('AdminShared'); ?></head>
+  <body>
+    <h1>Kelola Laporan (Arsip)</h1>
+
+    <div class="field" style="max-width:280px;">
+      <label for="filterPegawai">Pegawai</label>
+      <select id="filterPegawai"><option value="">Semua Pegawai</option></select>
+    </div>
+    <div class="field" style="max-width:220px; display:inline-block; margin-right:16px;">
+      <label for="filterMulai">Dari Tanggal</label>
+      <input type="date" id="filterMulai">
+    </div>
+    <div class="field" style="max-width:220px; display:inline-block;">
+      <label for="filterAkhir">Sampai Tanggal</label>
+      <input type="date" id="filterAkhir">
+    </div>
+    <button class="btn-primary" id="btnFilter" style="width:auto;">Terapkan Filter</button>
+
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead><tr><th>Tanggal</th><th>Jam</th><th>NIP</th><th>Nama</th><th>Aktivitas</th><th>Status</th><th>PDF</th></tr></thead>
+        <tbody id="tabelArsip"><tr><td colspan="7" class="loading">Memuat...</td></tr></tbody>
+      </table>
+    </div>
+
+    <script>
+      renderAdminNav();
+
+      function muatDaftarPegawaiFilter() {
+        google.script.run
+          .withSuccessHandler(function (result) {
+            if (!result.success) { return; }
+            var select = document.getElementById('filterPegawai');
+            result.data.forEach(function (p) {
+              var opt = document.createElement('option');
+              opt.value = p.nip;
+              opt.textContent = p.namaLengkap + ' (' + p.nip + ')';
+              select.appendChild(opt);
+            });
+          })
+          .withFailureHandler(function () {})
+          .listPegawai(getToken());
+      }
+
+      function formatBadge(status) {
+        return status === 'Final' ? '<span class="badge badge-final">Final</span>' : '<span class="badge badge-draft">Draft</span>';
+      }
+
+      function muatArsip() {
+        var filter = {
+          nip: document.getElementById('filterPegawai').value,
+          tanggalMulai: document.getElementById('filterMulai').value,
+          tanggalAkhir: document.getElementById('filterAkhir').value
+        };
+        document.getElementById('tabelArsip').innerHTML = '<tr><td colspan="7" class="loading">Memuat...</td></tr>';
+
+        google.script.run
+          .withSuccessHandler(function (result) {
+            if (!result.success) {
+              if (!handleSessionExpiry(result.message, '?page=admin-login')) {
+                document.getElementById('tabelArsip').innerHTML = '<tr><td colspan="7" class="error-message">' + result.message + '</td></tr>';
+              }
+              return;
+            }
+            if (result.data.length === 0) {
+              document.getElementById('tabelArsip').innerHTML = '<tr><td colspan="7" class="loading">Tidak ada laporan yang cocok dengan filter.</td></tr>';
+              return;
+            }
+            document.getElementById('tabelArsip').innerHTML = result.data.map(function (l) {
+              return '<tr><td>' + l.tanggal + '</td><td>' + l.jamMulai + '-' + l.jamSelesai + '</td><td>' + l.nip + '</td><td>' + l.nama + '</td>' +
+                '<td>' + l.namaAktivitas + '</td><td>' + formatBadge(l.status) + '</td>' +
+                '<td>' + (l.linkPdf ? '<a href="' + l.linkPdf + '" target="_blank">Buka</a>' : '-') + '</td></tr>';
+            }).join('');
+          })
+          .withFailureHandler(function (error) {
+            document.getElementById('tabelArsip').innerHTML = '<tr><td colspan="7" class="error-message">Gagal memuat: ' + error.message + '</td></tr>';
+          })
+          .listLaporanArsip(getToken(), filter);
+      }
+
+      document.getElementById('btnFilter').addEventListener('click', muatArsip);
+      muatDaftarPegawaiFilter();
+      muatArsip();
+    </script>
+  </body>
+</html>
