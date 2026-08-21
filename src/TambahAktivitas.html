@@ -88,7 +88,12 @@
         tambahPoinUraian(); // minimal 1 poin saat halaman dibuka mode "tambah baru"
       }
 
-      function kompresGambar(file, callback) {
+      // onError: file rusak/bukan gambar (mis. HEIC yang gak didukung browser,
+      // file kepotong pas upload) bikin FileReader/Image gagal diam-diam tanpa
+      // event apapun kalau gak ada onerror — tombol macet permanen di
+      // "Menyusun laporan..." tanpa pesan, satu-satunya jalan keluar reload
+      // (hilang semua isian). Ditemukan lewat verifikasi manual Task 10.
+      function kompresGambar(file, callback, onError) {
         var reader = new FileReader();
         reader.onload = function (e) {
           var img = new Image();
@@ -102,18 +107,21 @@
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             callback(canvas.toDataURL('image/jpeg', 0.8));
           };
+          img.onerror = onError;
           img.src = e.target.result;
         };
+        reader.onerror = onError;
         reader.readAsDataURL(file);
       }
 
-      function ambilFotoBase64(callback) {
+      function ambilFotoBase64(callback, onError) {
         var fileInputs = [document.getElementById('foto1'), document.getElementById('foto2'), document.getElementById('foto3')];
         // Slot terindeks (bukan push saat selesai) — kompresi tiap foto
         // berjalan async dan bisa selesai di luar urutan, padahal urutan
         // array ini menentukan foto masuk {{FOTO_1}}/{{FOTO_2}}/{{FOTO_3}} yang mana.
         var hasil = [null, null, null];
         var selesai = 0;
+        var gagal = false;
         var totalFile = fileInputs.filter(function (el) { return el.files.length > 0; }).length;
 
         if (totalFile === 0) { callback([]); return; }
@@ -121,9 +129,14 @@
         fileInputs.forEach(function (el, idx) {
           if (el.files.length === 0) return;
           kompresGambar(el.files[0], function (base64) {
+            if (gagal) return;
             hasil[idx] = base64;
             selesai++;
             if (selesai === totalFile) callback(hasil.filter(Boolean));
+          }, function () {
+            if (gagal) return;
+            gagal = true;
+            onError();
           });
         });
       }
@@ -198,6 +211,11 @@
               uraian: uraian,
               fotoBase64: fotoBase64
             });
+        }, function () {
+          btn.disabled = false;
+          btn.textContent = 'Simpan Laporan';
+          errorEl.textContent = 'Salah satu foto gagal diproses (kemungkinan file rusak atau bukan gambar). Coba pilih ulang foto itu.';
+          errorEl.style.display = 'block';
         });
       });
     </script>
