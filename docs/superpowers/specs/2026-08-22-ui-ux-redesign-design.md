@@ -58,7 +58,7 @@ Warna lambang (hijau `#2F7D4F`, merah `#B23A2E`) **hanya** dipakai di elemen sig
 
 Strip horizontal 4px, 4 segmen proporsional (hijau–biru–emas–merah, mengikuti warna perisai lambang Kabupaten Morowali), dipakai **satu kali per konteks halaman** — bukan elemen berulang:
 
-- Tepi bawah panel gelap pada landing/login (split-panel, §6.1).
+- Tepi atas panel gelap pada landing/login (split-panel, §6.1) — baris pertama di dalam panel, di atas logo.
 - Garis pembatas tipis di bawah topbar admin (§6.3).
 - Garis pembatas tipis di bawah H1 pada halaman pegawai (§6.2).
 
