@@ -3,7 +3,8 @@
   <head><base target="_top"><?!= include('Shared'); ?></head>
   <body>
     <main>
-    <h1>Aktivitas Saya</h1>
+    <h1 class="h1-compact">Aktivitas Saya</h1>
+    <div class="pita-lambang" style="margin-bottom:16px;"><span></span><span></span><span></span><span></span></div>
     <div class="field">
       <label for="tanggal">Tanggal</label>
       <input type="date" id="tanggal">
@@ -29,7 +30,7 @@
         }
         container.innerHTML = list.map(function (l) {
           return '<div class="card">' +
-            '<strong>' + l.jamMulai + ' - ' + l.jamSelesai + '</strong> ' + formatBadge(l.status) +
+            '<span class="waktu-aktivitas">' + l.jamMulai + ' - ' + l.jamSelesai + '</span> ' + formatBadge(l.status) +
             '<p>' + l.namaAktivitas + '</p>' +
             '<a href="' + l.linkPdf + '" target="_blank">Unduh PDF</a>' +
             ' | <a href="?page=aktivitas/tambah&id=' + l.idLaporan + '">Edit</a>' +
