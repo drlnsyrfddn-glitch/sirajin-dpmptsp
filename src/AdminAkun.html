@@ -63,11 +63,11 @@
           return;
         }
         tbody.innerHTML = daftarAdmin.map(function (a) {
-          var badge = a.status === 'Aktif' ? '<span class="badge badge-final">Aktif</span>' : '<span class="badge badge-error">Nonaktif</span>';
+          var badge = a.status === 'Aktif' ? '<span class="badge badge-aktif">Aktif</span>' : '<span class="badge badge-nonaktif">Nonaktif</span>';
           var aksiToggle = a.status === 'Aktif'
             ? '<a href="#" onclick="toggleStatus(\'' + a.id + '\', \'Nonaktif\'); return false;">Nonaktifkan</a>'
             : '<a href="#" onclick="toggleStatus(\'' + a.id + '\', \'Aktif\'); return false;">Aktifkan</a>';
-          return '<tr><td>' + a.nip + '</td><td>' + a.nama + '</td><td>' + a.level + '</td>' +
+          return '<tr><td>' + a.nip + '</td><td><span class="avatar-row">' + avatarHtml(a.nama) + a.nama + '</span></td><td>' + a.level + '</td>' +
             '<td>' + badge + '</td>' +
             '<td><a href="#" onclick="editAdmin(\'' + a.id + '\'); return false;">Edit</a> | ' + aksiToggle + '</td></tr>';
         }).join('');

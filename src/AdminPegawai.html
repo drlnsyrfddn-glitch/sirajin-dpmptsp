@@ -54,11 +54,11 @@
           return;
         }
         tbody.innerHTML = daftarPegawai.map(function (p) {
-          var badge = p.status === 'Aktif' ? '<span class="badge badge-final">Aktif</span>' : '<span class="badge badge-error">Nonaktif</span>';
+          var badge = p.status === 'Aktif' ? '<span class="badge badge-aktif">Aktif</span>' : '<span class="badge badge-nonaktif">Nonaktif</span>';
           var aksiToggle = p.status === 'Aktif'
             ? '<a href="#" onclick="toggleStatus(\'' + p.id + '\', \'Nonaktif\'); return false;">Nonaktifkan</a>'
             : '<a href="#" onclick="toggleStatus(\'' + p.id + '\', \'Aktif\'); return false;">Aktifkan</a>';
-          return '<tr><td>' + p.nip + '</td><td>' + p.namaLengkap + '</td><td>' + p.jabatan + '</td><td>' + p.unitKerja + '</td>' +
+          return '<tr><td>' + p.nip + '</td><td><span class="avatar-row">' + avatarHtml(p.namaLengkap) + p.namaLengkap + '</span></td><td>' + p.jabatan + '</td><td>' + p.unitKerja + '</td>' +
             '<td>' + badge + '</td>' +
             '<td><a href="#" onclick="editPegawai(\'' + p.id + '\'); return false;">Edit</a> | ' + aksiToggle + '</td></tr>';
         }).join('');
