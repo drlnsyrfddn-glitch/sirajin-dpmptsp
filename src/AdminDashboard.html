@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head><base target="_top"><?!= include('AdminShared'); ?></head>
+  <body>
+    <h1>Dashboard Kepatuhan</h1>
+
+    <div class="field" style="max-width:220px;">
+      <label for="tanggal">Tanggal</label>
+      <input type="date" id="tanggal">
+    </div>
+
+    <div id="ringkasan"><p class="loading">Memuat...</p></div>
+
+    <h3>Belum Lapor</h3>
+    <div id="belumLapor"><p class="loading">Memuat...</p></div>
+
+    <h3>Rekap Jam Kerja (laporan Final)</h3>
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead><tr><th>NIP</th><th>Nama</th><th>Total Jam</th></tr></thead>
+        <tbody id="tabelJam"><tr><td colspan="3" class="loading">Memuat...</td></tr></tbody>
+      </table>
+    </div>
+
+    <script>
+      renderAdminNav();
+
+      function formatMenitJam(menit) {
+        var jam = Math.floor(menit / 60);
+        var sisaMenit = menit % 60;
+        return jam + ' Jam ' + sisaMenit + ' Menit';
+      }
+
+      function muatDashboard() {
+        var tanggal = document.getElementById('tanggal').value;
+        document.getElementById('ringkasan').innerHTML = '<p class="loading">Memuat...</p>';
+
+        google.script.run
+          .withSuccessHandler(function (result) {
+            if (!result.success) {
+              if (!handleSessionExpiry(result.message, '?page=admin-login')) {
+                document.getElementById('ringkasan').innerHTML = '<p class="error-message">' + result.message + '</p>';
+              }
+              return;
+            }
+            var d = result.data;
+
+            document.getElementById('ringkasan').innerHTML =
+              '<div class="stat-card"><div class="stat-number">' + d.totalPegawaiAktif + '</div><div class="stat-label">Pegawai Aktif</div></div>' +
+              '<div class="stat-card"><div class="stat-number">' + d.sudahLapor + '</div><div class="stat-label">Sudah Lapor</div></div>' +
+              '<div class="stat-card"><div class="stat-number">' + d.belumLapor.length + '</div><div class="stat-label">Belum Lapor</div></div>';
+
+            document.getElementById('belumLapor').innerHTML = d.belumLapor.length === 0
+              ? '<p class="loading">Semua pegawai aktif sudah lapor.</p>'
+              : '<ul>' + d.belumLapor.map(function (p) { return '<li>' + p.nama + ' (' + p.nip + ')</li>'; }).join('') + '</ul>';
+
+            document.getElementById('tabelJam').innerHTML = d.rekapJam.length === 0
+              ? '<tr><td colspan="3" class="loading">Belum ada laporan Final untuk tanggal ini.</td></tr>'
+              : d.rekapJam.map(function (r) {
+                  return '<tr><td>' + r.nip + '</td><td>' + r.nama + '</td><td>' + formatMenitJam(r.totalMenit) + '</td></tr>';
+                }).join('');
+          })
+          .withFailureHandler(function (error) {
+            document.getElementById('ringkasan').innerHTML = '<p class="error-message">Gagal memuat: ' + error.message + '</p>';
+          })
+          .getDashboardSummary(getToken(), tanggal);
+      }
+
+      var today = new Date().toISOString().split('T')[0];
+      document.getElementById('tanggal').value = today;
+      document.getElementById('tanggal').addEventListener('change', muatDashboard);
+      muatDashboard();
+    </script>
+  </body>
+</html>
