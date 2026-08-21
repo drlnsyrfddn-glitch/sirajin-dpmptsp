@@ -42,9 +42,8 @@
           .withSuccessHandler(function (result) {
             if (result.success) {
               renderLaporan(result.data);
-            } else {
+            } else if (!handleSessionExpiry(result.message)) {
               document.getElementById('daftarLaporan').innerHTML = '<p class="error-message">' + result.message + '</p>';
-              if (result.message.indexOf('login ulang') > -1) { clearToken(); window.location.href = '?page=login'; }
             }
           })
           .withFailureHandler(function (error) {
@@ -57,7 +56,7 @@
         if (!confirm('Yakin hapus laporan ini?')) return;
         google.script.run
           .withSuccessHandler(function (result) {
-            if (result.success) { muatLaporan(); } else { alert(result.message); }
+            if (result.success) { muatLaporan(); } else if (!handleSessionExpiry(result.message)) { alert(result.message); }
           })
           .withFailureHandler(function (error) { alert('Gagal: ' + error.message); })
           .deleteAktivitas(getToken(), id);
@@ -67,7 +66,7 @@
         if (!confirm('Setelah difinalisasi, laporan tidak bisa dihapus. Lanjutkan?')) return;
         google.script.run
           .withSuccessHandler(function (result) {
-            if (result.success) { muatLaporan(); } else { alert(result.message); }
+            if (result.success) { muatLaporan(); } else if (!handleSessionExpiry(result.message)) { alert(result.message); }
           })
           .withFailureHandler(function (error) { alert('Gagal: ' + error.message); })
           .finalizeAktivitas(getToken(), id);
