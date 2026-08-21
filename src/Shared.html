@@ -76,16 +76,47 @@
   .loading { color: var(--ink-600); font-size: 14px; }
 </style>
 <script>
+  // Apps Script menjalankan halaman di dalam iframe sandbox dengan
+  // `allow-top-navigation-by-user-activation` — navigasi lewat
+  // `window.location.href` yang dipicu setelah jeda async (mis. callback
+  // google.script.run) bisa ditolak diam-diam (layar putih macet, tanpa
+  // error). Klik anchor asli lebih diterima sandbox. Href relatif ('?page=..')
+  // JUGA tidak bisa dipakai langsung: karena elemen anchor ini dibuat di
+  // dalam dokumen iframe sandbox, href relatif ke-resolve ke origin sandbox
+  // (script.googleusercontent.com), bukan URL asli aplikasi (script.google.com/
+  // .../exec) — walau target="_top" mengarahkan NAVIGASI ke top frame, URL-nya
+  // sendiri tetap salah. SIRAJIN_BASE_URL disuntik dari server lewat
+  // ScriptApp.getService().getUrl() (satu-satunya sumber URL exec yang bisa
+  // dipercaya dari sisi client) supaya href-nya selalu benar. Link tetap
+  // ditinggal terlihat & bisa diklik manual kalau auto-redirect tetap gagal —
+  // pengguna tidak pernah terjebak layar kosong tanpa jalan keluar.
+  var SIRAJIN_BASE_URL = '<?= ScriptApp.getService().getUrl() ?>';
+
   function getToken() { return sessionStorage.getItem('sirajin_token'); }
   function setToken(t) { sessionStorage.setItem('sirajin_token', t); }
   function clearToken() { sessionStorage.removeItem('sirajin_token'); }
+
+  function redirectTop(queryString, pesan) {
+    var a = document.createElement('a');
+    a.href = SIRAJIN_BASE_URL + queryString;
+    a.target = '_top';
+    a.textContent = pesan || 'Klik di sini untuk lanjut →';
+    a.className = 'btn-primary';
+    a.style.display = 'inline-block';
+    a.style.width = 'auto';
+    a.style.textDecoration = 'none';
+    a.style.marginTop = '12px';
+    document.body.insertBefore(a, document.body.firstChild);
+    a.click();
+  }
+
   function requireLogin() {
-    if (!getToken()) { window.location.href = '?page=login'; }
+    if (!getToken()) { redirectTop('?page=login', 'Sesi belum login. Klik di sini untuk masuk →'); }
   }
   function handleSessionExpiry(message, redirectTo) {
     if (message && message.indexOf('login ulang') > -1) {
       clearToken();
-      window.location.href = redirectTo || '?page=login';
+      redirectTop(redirectTo || '?page=login', 'Sesi berakhir, silakan login ulang. Klik di sini →');
       return true;
     }
     return false;

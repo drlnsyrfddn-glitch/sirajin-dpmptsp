@@ -37,7 +37,7 @@
             btn.textContent = 'Masuk';
             if (result.success) {
               setToken(result.token);
-              window.location.href = '?page=admin';
+              redirectTop('?page=admin', 'Berhasil masuk. Klik di sini untuk lanjut ke Dashboard →');
             } else {
               errorEl.textContent = result.message;
               errorEl.style.display = 'block';

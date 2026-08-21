@@ -174,7 +174,7 @@
               btn.disabled = false;
               btn.textContent = 'Simpan Laporan';
               if (result.success) {
-                window.location.href = '?page=aktivitas';
+                redirectTop('?page=aktivitas', 'Laporan tersimpan. Klik di sini untuk lanjut →');
               } else if (!handleSessionExpiry(result.message)) {
                 errorEl.textContent = result.message;
                 errorEl.style.display = 'block';

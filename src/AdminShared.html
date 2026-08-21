@@ -36,7 +36,7 @@
   }
 
   function requireAdminLogin() {
-    if (!getToken()) { window.location.href = '?page=admin-login'; return true; }
+    if (!getToken()) { redirectTop('?page=admin-login', 'Sesi belum login. Klik di sini untuk masuk →'); return true; }
     return false;
   }
 
@@ -53,7 +53,7 @@
     google.script.run
       .withSuccessHandler(function (result) {
         if (!result.success) {
-          if (!handleSessionExpiry(result.message, '?page=admin-login')) { window.location.href = '?page=admin-login'; }
+          if (!handleSessionExpiry(result.message, '?page=admin-login')) { redirectTop('?page=admin-login', 'Sesi tidak valid. Klik di sini untuk login ulang →'); }
           return;
         }
         var session = result.session;
@@ -72,6 +72,6 @@
 
   function adminLogout() {
     clearToken();
-    window.location.href = '?page=admin-login';
+    redirectTop('?page=admin-login', 'Berhasil keluar. Klik di sini →');
   }
 </script>
