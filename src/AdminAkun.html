@@ -2,11 +2,12 @@
 <html>
   <head><base target="_top"><?!= include('AdminShared'); ?></head>
   <body>
+    <main>
     <h1>Kelola Admin</h1>
     <p class="error-message" id="aksesError" style="display:none;"></p>
 
     <div id="kontenHalaman">
-      <button class="btn-primary" id="btnTambah" style="width:auto;">+ Tambah Admin</button>
+      <button class="btn-primary btn-inline" id="btnTambah">+ Tambah Admin</button>
 
       <div class="card" id="formAdmin" style="display:none; margin-top:16px;">
         <h3 id="formJudul">Tambah Admin</h3>
@@ -17,8 +18,8 @@
           <select id="aLevel"><option value="Admin">Admin</option><option value="SuperAdmin">SuperAdmin</option></select>
         </div>
         <div class="field"><label for="aPassword">Password (kosongkan kalau tidak ingin diubah saat edit)</label><input type="password" id="aPassword"></div>
-        <button class="btn-primary" id="btnSimpanAdmin" style="width:auto;">Simpan</button>
-        <button class="btn-ghost" id="btnBatalAdmin" style="width:auto;">Batal</button>
+        <button class="btn-primary btn-inline" id="btnSimpanAdmin">Simpan</button>
+        <button class="btn-ghost btn-inline" id="btnBatalAdmin">Batal</button>
         <p class="error-message" id="formError" style="display:none;"></p>
       </div>
 
@@ -30,8 +31,10 @@
       </div>
     </div>
 
+    </main>
+
     <script>
-      renderAdminNav();
+      renderAdminNav('admin/akun');
 
       var daftarAdmin = [];
 
@@ -49,7 +52,7 @@
             daftarAdmin = result.data;
             renderTabel();
           })
-          .withFailureHandler(function (error) { alert('Gagal memuat: ' + error.message); })
+          .withFailureHandler(function (error) { showToast('Gagal memuat: ' + error.message, true); })
           .listAdmin(getToken());
       }
 
@@ -154,9 +157,9 @@
         google.script.run
           .withSuccessHandler(function (result) {
             if (result.success) { muatAdmin(); }
-            else if (!handleSessionExpiry(result.message, '?page=admin-login')) { alert(result.message); }
+            else if (!handleSessionExpiry(result.message, '?page=admin-login')) { showToast(result.message, true); }
           })
-          .withFailureHandler(function (error) { alert('Gagal: ' + error.message); })
+          .withFailureHandler(function (error) { showToast('Gagal: ' + error.message, true); })
           .setAdminStatus(getToken(), id, statusBaru);
       }
 

@@ -24,32 +24,39 @@
     padding: 16px;
     font-size: 16px;
   }
-  h1 { font-size: 24px; font-weight: 700; margin: 0 0 16px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; margin: 0 0 16px; }
+  h3 { font-weight: 600; letter-spacing: -0.005em; }
+  a { color: var(--blue-600); }
+  :focus-visible { outline: 2px solid var(--blue-600); outline-offset: 2px; }
+  .btn-primary, .btn-ghost {
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 16px;
+    width: 100%;
+    min-height: 44px;
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease, transform 100ms ease;
+  }
   .btn-primary {
     background: var(--blue-600);
     color: #fff;
     border: none;
-    border-radius: 8px;
-    padding: 12px 20px;
-    font-size: 16px;
     font-weight: 600;
-    width: 100%;
-    min-height: 44px;
-    cursor: pointer;
   }
   .btn-primary:hover { background: var(--blue-700); }
-  .btn-primary:disabled { background: var(--border); color: var(--ink-600); cursor: not-allowed; }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { background: var(--border); color: var(--ink-600); cursor: not-allowed; transform: none; }
   .btn-ghost {
     background: transparent;
     color: var(--ink-900);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 20px;
-    font-size: 16px;
-    width: 100%;
-    min-height: 44px;
-    cursor: pointer;
   }
+  .btn-ghost:hover { border-color: var(--ink-600); }
+  .btn-ghost:active { transform: scale(0.98); }
+  /* .btn-inline: pakai ini buat tombol yang gak perlu selebar layar (di
+     samping tombol lain, di dalam toolbar filter, dst) — ganti pola lama
+     nempel style="width:auto" langsung di tiap tombol satu-satu. */
+  .btn-inline { width: auto; display: inline-block; text-decoration: none; text-align: center; }
   .field { margin-bottom: 16px; }
   .field label { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-600); margin-bottom: 6px; }
   .field input, .field select {
@@ -59,14 +66,15 @@
     border-radius: 8px;
     font-size: 16px;
     min-height: 44px;
+    transition: border-color 150ms ease;
   }
+  .field input:focus, .field select:focus { border-color: var(--blue-600); }
   .card {
     background: var(--paper);
-    border: 1px solid var(--border);
     border-radius: 10px;
     padding: 16px;
     margin-bottom: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    box-shadow: 0 1px 2px rgba(35,131,226,0.06), 0 4px 12px rgba(35,131,226,0.05);
   }
   .badge { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
   .badge-draft { background: var(--surface); color: var(--ink-600); }
@@ -74,6 +82,22 @@
   .badge-error { background: #FDEBE9; color: var(--danger); }
   .error-message { color: var(--danger); font-size: 14px; margin-top: 8px; }
   .loading { color: var(--ink-600); font-size: 14px; }
+  .stat-number, .tabular-nums, .admin-table td { font-variant-numeric: tabular-nums; }
+  #sirajinToast {
+    display: none;
+    position: fixed;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    max-width: calc(100% - 32px);
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    z-index: 1000;
+  }
 </style>
 <script>
   // Apps Script menjalankan halaman di dalam iframe sandbox dengan
@@ -101,13 +125,26 @@
     a.href = SIRAJIN_BASE_URL + queryString;
     a.target = '_top';
     a.textContent = pesan || 'Klik di sini untuk lanjut →';
-    a.className = 'btn-primary';
-    a.style.display = 'inline-block';
-    a.style.width = 'auto';
-    a.style.textDecoration = 'none';
+    a.className = 'btn-primary btn-inline';
     a.style.marginTop = '12px';
     document.body.insertBefore(a, document.body.firstChild);
     a.click();
+  }
+
+  // Pengganti window.alert() — notifikasi singkat yang gak menghentikan
+  // eksekusi JS dan gak keliatan kayak popup browser generik.
+  function showToast(message, isError) {
+    var el = document.getElementById('sirajinToast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'sirajinToast';
+      document.body.appendChild(el);
+    }
+    el.textContent = message;
+    el.style.background = isError ? 'var(--danger)' : 'var(--success)';
+    el.style.display = 'block';
+    clearTimeout(el._sirajinTimer);
+    el._sirajinTimer = setTimeout(function () { el.style.display = 'none'; }, 4000);
   }
 
   function requireLogin() {

@@ -2,6 +2,7 @@
 <html>
   <head><base target="_top"><?!= include('Shared'); ?></head>
   <body>
+    <main>
     <h1>Aktivitas Saya</h1>
     <div class="field">
       <label for="tanggal">Tanggal</label>
@@ -9,6 +10,8 @@
     </div>
     <div id="daftarLaporan"><p class="loading">Memuat...</p></div>
     <a href="?page=aktivitas/tambah"><button class="btn-primary">+ Tambah Aktivitas</button></a>
+
+    </main>
 
     <script>
       requireLogin();
@@ -56,9 +59,9 @@
         if (!confirm('Yakin hapus laporan ini?')) return;
         google.script.run
           .withSuccessHandler(function (result) {
-            if (result.success) { muatLaporan(); } else if (!handleSessionExpiry(result.message)) { alert(result.message); }
+            if (result.success) { muatLaporan(); } else if (!handleSessionExpiry(result.message)) { showToast(result.message, true); }
           })
-          .withFailureHandler(function (error) { alert('Gagal: ' + error.message); })
+          .withFailureHandler(function (error) { showToast('Gagal: ' + error.message, true); })
           .deleteAktivitas(getToken(), id);
       }
 
@@ -66,9 +69,9 @@
         if (!confirm('Setelah difinalisasi, laporan tidak bisa dihapus. Lanjutkan?')) return;
         google.script.run
           .withSuccessHandler(function (result) {
-            if (result.success) { muatLaporan(); } else if (!handleSessionExpiry(result.message)) { alert(result.message); }
+            if (result.success) { muatLaporan(); } else if (!handleSessionExpiry(result.message)) { showToast(result.message, true); }
           })
-          .withFailureHandler(function (error) { alert('Gagal: ' + error.message); })
+          .withFailureHandler(function (error) { showToast('Gagal: ' + error.message, true); })
           .finalizeAktivitas(getToken(), id);
       }
 

@@ -11,16 +11,25 @@
     flex-wrap: wrap;
     gap: 8px;
   }
-  .admin-nav { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
-  .admin-nav a { color: var(--ink-600); text-decoration: none; font-size: 14px; font-weight: 600; }
-  .admin-nav a:hover { color: var(--blue-600); }
-  .admin-nav-brand { font-weight: 700; color: var(--ink-900); font-size: 16px; }
+  .admin-nav { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+  .admin-nav a {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--ink-600); text-decoration: none; font-size: 14px; font-weight: 600;
+    padding: 6px 10px; border-radius: 6px;
+    transition: color 150ms ease, background-color 150ms ease;
+  }
+  .admin-nav a svg { flex: none; }
+  .admin-nav a:hover { color: var(--blue-600); background: var(--blue-100); }
+  .admin-nav a.active { color: var(--blue-600); background: var(--blue-100); }
+  .admin-nav-brand { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--ink-900); font-size: 16px; margin-right: 8px; }
   .admin-user { display: flex; align-items: center; gap: 12px; font-size: 14px; color: var(--ink-600); }
+  .admin-user a { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-600); text-decoration: none; font-weight: 600; }
+  .admin-user a:hover { color: var(--danger); }
   .admin-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
   .admin-table th, .admin-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 14px; }
   .admin-table th { background: var(--surface); text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: var(--ink-600); }
   .table-wrap { overflow-x: auto; }
-  .stat-card { display: inline-block; min-width: 160px; padding: 20px; background: var(--paper); border: 1px solid var(--border); border-radius: 10px; margin-right: 12px; margin-bottom: 12px; }
+  .stat-card { display: inline-block; min-width: 160px; padding: 20px; background: var(--paper); border-radius: 10px; margin-right: 12px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(35,131,226,0.06), 0 4px 12px rgba(35,131,226,0.05); }
   .stat-number { font-size: 32px; font-weight: 700; color: var(--ink-900); }
   .stat-label { font-size: 12px; color: var(--ink-600); text-transform: uppercase; }
 </style>
@@ -40,14 +49,28 @@
     return false;
   }
 
-  function renderAdminNav() {
+  var ADMIN_NAV_ICONS = {
+    dashboard: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>',
+    pegawai: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="5.5" cy="5" r="2.2" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 14c0-2.4 1.8-4 4-4s4 1.6 4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="11.5" cy="4.5" r="1.7" stroke="currentColor" stroke-width="1.2"/><path d="M9.8 8.3c.5-.2 1.1-.3 1.7-.3 2 0 3.5 1.4 3.5 3.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
+    laporan: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3.5 1.5h6l3 3v10h-9v-13z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 8h4M6 10.5h4M6 5.5h1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
+    admin: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M7.2 7.2 14 14M11 10.5l1.5 1.5M13 8.5l1.5 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+    keluar: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6.5 1.5h-4a1 1 0 00-1 1v11a1 1 0 001 1h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M9.5 5 13 8l-3.5 3M13 8H5.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  };
+
+  // halamanAktif: kunci pageMap halaman saat ini (mis. 'admin/pegawai') -
+  // dipakai buat highlight link yang sedang aktif di nav. Server (Code.js)
+  // sudah tahu halaman mana yang di-render lewat parameter ?page=, jadi
+  // tiap halaman tinggal kirim kuncinya sendiri saat manggil renderAdminNav()
+  // daripada baca ulang URL dari sisi client (tidak bisa diandalkan di
+  // dalam iframe sandbox, lihat catatan redirectTop di Shared.html).
+  function renderAdminNav(halamanAktif) {
     if (requireAdminLogin()) return;
 
-    var topbarHtml = '<div class="admin-topbar">' +
-      '<div class="admin-nav"><span class="admin-nav-brand">SiRajin Admin</span>' +
-      '<span id="adminNavLinks"></span></div>' +
+    var topbarHtml = '<header class="admin-topbar">' +
+      '<div class="admin-nav-brand">' + ADMIN_NAV_ICONS.dashboard + ' SiRajin Admin</div>' +
+      '<nav class="admin-nav" id="adminNavLinks"></nav>' +
       '<div class="admin-user"><span id="adminUserName"></span>' +
-      '<a href="#" onclick="adminLogout(); return false;">Keluar</a></div></div>';
+      '<a href="#" onclick="adminLogout(); return false;">' + ADMIN_NAV_ICONS.keluar + ' Keluar</a></div></header>';
     document.body.insertAdjacentHTML('afterbegin', topbarHtml);
 
     google.script.run
@@ -57,10 +80,14 @@
           return;
         }
         var session = result.session;
-        var navLinks = '<a href="?page=admin">Dashboard</a>' +
-          '<a href="?page=admin/pegawai">Kelola Pegawai</a>' +
-          '<a href="?page=admin/laporan">Kelola Laporan</a>' +
-          (session.level === 'SuperAdmin' ? '<a href="?page=admin/akun">Kelola Admin</a>' : '');
+        function link(page, kunci, icon, label) {
+          var active = kunci === halamanAktif ? ' active' : '';
+          return '<a class="' + active.trim() + '" href="?page=' + page + '">' + icon + label + '</a>';
+        }
+        var navLinks = link('admin', 'admin', ADMIN_NAV_ICONS.dashboard, 'Dashboard') +
+          link('admin/pegawai', 'admin/pegawai', ADMIN_NAV_ICONS.pegawai, 'Kelola Pegawai') +
+          link('admin/laporan', 'admin/laporan', ADMIN_NAV_ICONS.laporan, 'Kelola Laporan') +
+          (session.level === 'SuperAdmin' ? link('admin/akun', 'admin/akun', ADMIN_NAV_ICONS.admin, 'Kelola Admin') : '');
         document.getElementById('adminNavLinks').innerHTML = navLinks;
         document.getElementById('adminUserName').textContent = session.nama + ' (' + session.level + ')';
       })

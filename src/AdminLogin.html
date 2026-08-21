@@ -2,6 +2,7 @@
 <html>
   <head><base target="_top"><?!= include('Shared'); ?></head>
   <body>
+    <main>
     <h1>Login Admin</h1>
     <div class="field">
       <label for="nip">NIP</label>
@@ -13,6 +14,8 @@
     </div>
     <button class="btn-primary" id="btnLogin">Masuk</button>
     <p class="error-message" id="errorMsg" style="display:none;"></p>
+
+    </main>
 
     <script>
       document.getElementById('btnLogin').addEventListener('click', function () {

@@ -2,6 +2,7 @@
 <html>
   <head><base target="_top"><?!= include('AdminShared'); ?></head>
   <body>
+    <main>
     <h1>Kelola Laporan (Arsip)</h1>
 
     <div class="field" style="max-width:280px;">
@@ -16,7 +17,7 @@
       <label for="filterAkhir">Sampai Tanggal</label>
       <input type="date" id="filterAkhir">
     </div>
-    <button class="btn-primary" id="btnFilter" style="width:auto;">Terapkan Filter</button>
+    <button class="btn-primary btn-inline" id="btnFilter">Terapkan Filter</button>
 
     <div class="table-wrap">
       <table class="admin-table">
@@ -25,8 +26,10 @@
       </table>
     </div>
 
+    </main>
+
     <script>
-      renderAdminNav();
+      renderAdminNav('admin/laporan');
 
       function muatDaftarPegawaiFilter() {
         google.script.run

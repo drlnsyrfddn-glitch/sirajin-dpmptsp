@@ -2,6 +2,7 @@
 <html>
   <head><base target="_top"><?!= include('AdminShared'); ?></head>
   <body>
+    <main>
     <h1>Dashboard Kepatuhan</h1>
 
     <div class="field" style="max-width:220px;">
@@ -22,8 +23,10 @@
       </table>
     </div>
 
+    </main>
+
     <script>
-      renderAdminNav();
+      renderAdminNav('admin');
 
       function formatMenitJam(menit) {
         var jam = Math.floor(menit / 60);
