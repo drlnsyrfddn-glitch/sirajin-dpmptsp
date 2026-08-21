@@ -1466,6 +1466,7 @@ Buka URL Web App dari Step 1, lalu:
 - [ ] Login dengan NIP terdaftar → masuk ke halaman Aktivitas
 - [ ] Login dengan NIP yang tidak terdaftar → muncul pesan "NIP tidak ditemukan"
 - [ ] Login admin dengan field password dikosongkan → ditolak dengan pesan jelas, bukan error server mentah (ditemukan saat review Task 4: `loginAdmin` tidak menjaga `password` kosong sebelum `hashPassword`)
+- [ ] Panggil `finalizeAktivitas` dua kali pada laporan yang sama → tidak error, PDF & `waktuFinalisasi` cukup ter-update ulang tanpa efek samping buruk (ditemukan saat review Task 6: tidak ada guard idempotensi, kemungkinan besar aman tapi perlu dipastikan manual)
 - [ ] Tambah laporan dengan 1 foto → muncul di daftar dengan badge Draft, link PDF bisa dibuka & terlihat identik dengan `template/laporan_kinerja_harian_v4.pdf`
 - [ ] Tambah laporan dengan 3 foto → ketiga foto tampil di posisi slot yang benar di PDF
 - [ ] Isi jam selesai lebih awal dari jam mulai → ditolak dengan pesan jelas, tidak submit ke server
