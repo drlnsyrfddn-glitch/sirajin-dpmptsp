@@ -69,8 +69,8 @@
               return;
             }
             document.getElementById('tabelArsip').innerHTML = result.data.map(function (l) {
-              return '<tr><td>' + l.tanggal + '</td><td>' + l.jamMulai + '-' + l.jamSelesai + '</td><td>' + l.nip + '</td><td>' + l.nama + '</td>' +
-                '<td>' + l.namaAktivitas + '</td><td>' + formatBadge(l.status) + '</td>' +
+              return '<tr><td>' + escapeHtml(l.tanggal) + '</td><td>' + escapeHtml(l.jamMulai) + '-' + escapeHtml(l.jamSelesai) + '</td><td>' + escapeHtml(l.nip) + '</td><td>' + escapeHtml(l.nama) + '</td>' +
+                '<td>' + escapeHtml(l.namaAktivitas) + '</td><td>' + formatBadge(l.status) + '</td>' +
                 '<td>' + (l.linkPdf ? '<a href="' + l.linkPdf + '" target="_blank">Buka</a>' : '-') + '</td></tr>';
             }).join('');
           })

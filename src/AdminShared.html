@@ -25,6 +25,16 @@
   .stat-label { font-size: 12px; color: var(--ink-600); text-transform: uppercase; }
 </style>
 <script>
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function requireAdminLogin() {
     if (!getToken()) { window.location.href = '?page=admin-login'; return true; }
     return false;

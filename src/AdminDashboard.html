@@ -52,12 +52,12 @@
 
             document.getElementById('belumLapor').innerHTML = d.belumLapor.length === 0
               ? '<p class="loading">Semua pegawai aktif sudah lapor.</p>'
-              : '<ul>' + d.belumLapor.map(function (p) { return '<li>' + p.nama + ' (' + p.nip + ')</li>'; }).join('') + '</ul>';
+              : '<ul>' + d.belumLapor.map(function (p) { return '<li>' + escapeHtml(p.nama) + ' (' + escapeHtml(p.nip) + ')</li>'; }).join('') + '</ul>';
 
             document.getElementById('tabelJam').innerHTML = d.rekapJam.length === 0
               ? '<tr><td colspan="3" class="loading">Belum ada laporan Final untuk tanggal ini.</td></tr>'
               : d.rekapJam.map(function (r) {
-                  return '<tr><td>' + r.nip + '</td><td>' + r.nama + '</td><td>' + formatMenitJam(r.totalMenit) + '</td></tr>';
+                  return '<tr><td>' + escapeHtml(r.nip) + '</td><td>' + escapeHtml(r.nama) + '</td><td>' + formatMenitJam(r.totalMenit) + '</td></tr>';
                 }).join('');
           })
           .withFailureHandler(function (error) {
