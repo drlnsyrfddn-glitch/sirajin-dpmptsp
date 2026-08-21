@@ -50,9 +50,18 @@ Warna lambang (hijau `#2F7D4F`, merah `#B23A2E`) **hanya** dipakai di elemen sig
 
 ### 5.2 Tipografi
 
-- **Source Serif 4** (display) — H1 hero landing/login & judul halaman utama (`Dashboard Kepatuhan`, `Aktivitas Saya`, dst). Kesan dokumen resmi, senada dengan sifat formal laporan PDF yang dihasilkan aplikasi ini.
+- **Source Serif 4** (display) — dipakai di semua H1, tapi dalam **2 ukuran** tergantung konteks halaman (lihat pemisahan di bawah). Kesan dokumen resmi, senada dengan sifat formal laporan PDF yang dihasilkan aplikasi ini.
 - **Inter** (tetap, sudah dipakai) — semua UI, form, tabel, body text.
 - `font-variant-numeric: tabular-nums` (sudah ada di `.stat-number`, `.admin-table td`) dipertahankan, diperluas ke tampilan jam mulai/selesai di kartu Aktivitas (§6.2).
+
+**H1 hero vs H1 utility** — ditambahkan setelah review checkpoint Task 3 (produk owner menandai H1 32px terasa kebesaran buat halaman yang dibuka pegawai berkali-kali sehari dari HP):
+
+| Konteks | Ukuran | Halaman |
+|---|---|---|
+| **Hero** (rule `h1` default, 32px) | Halaman yang dibuka jarang/sekali per sesi, desktop-first atau splash-style | `Home.html`, `Login.html`, `AdminLogin.html` (judul di `.split-form`), 4 halaman admin (`Dashboard Kepatuhan`, `Kelola Pegawai`, `Kelola Laporan`, `Kelola Admin`) |
+| **Utility** (class `h1.h1-compact`, 22px) | Halaman yang dibuka pegawai berulang kali sehari, HP-first, butuh hemat ruang vertikal di atas layar kecil | `Aktivitas.html` ("Aktivitas Saya"), `TambahAktivitas.html` ("Tambah Aktivitas"/"Edit Aktivitas") |
+
+`h1.h1-compact` mewarisi `font-family`/`font-weight`/`letter-spacing` dari rule `h1` dasar, cuma override `font-size` (22px), `line-height` (1.25), dan `margin` (0 0 12px) — tetap Source Serif, cuma lebih ringkas.
 
 ### 5.3 Elemen Signature — "Pita Lambang"
 

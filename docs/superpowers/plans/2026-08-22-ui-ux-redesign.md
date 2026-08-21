@@ -574,17 +574,31 @@ git commit -m "feat: redesign admin topbar to navy institutional style with cres
 
 ---
 
-## Task 7: Redesign `Aktivitas.html` (pita divider + bold time display)
+## Task 7: Redesign `Aktivitas.html` (pita divider + bold time display + compact H1)
 
 **Files:**
 - Modify: `src/Aktivitas.html`
+- Modify: `src/Shared.html` (one small addition — see Step 1)
 
 **Interfaces:**
 - Consumes: `.pita-lambang`, `.waktu-aktivitas` (from Task 1).
+- Produces: `h1.h1-compact` CSS rule in `src/Shared.html` (consumed by Task 8, which reuses the same class on `TambahAktivitas.html`'s H1).
 
-- [ ] **Step 1: Add the pita-lambang divider under the H1**
+**Context — post-checkpoint amendment:** during the Task 3 checkpoint review, the product owner flagged that the global `h1` rule (32px, added in Task 1) reads as oversized on the small, frequently-opened pegawai utility pages (`Aktivitas.html`, `TambahAktivitas.html` — opened multiple times a day, phone-first). Task 1 is already reviewed and committed, so rather than reopening it, this task adds one small additive CSS rule to `Shared.html` (a new class, nothing existing is changed) and this task is the first to consume it. See spec §5.2 "H1 hero vs H1 utility".
 
-Replace:
+- [ ] **Step 1: Add the `h1.h1-compact` utility-heading override to `Shared.html`**
+
+In `src/Shared.html`, append this rule right after the existing `.waktu-aktivitas` rule (added in Task 1), before `</style>`:
+
+```css
+  h1.h1-compact { font-size: 22px; line-height: 1.25; margin: 0 0 12px; }
+```
+
+(Inherits `font-family`/`font-weight`/`letter-spacing` from the base `h1` rule — this only overrides size/line-height/margin for utility-page headings.)
+
+- [ ] **Step 2: Add the pita-lambang divider under the H1, and mark it compact**
+
+In `src/Aktivitas.html`, replace:
 
 ```html
     <h1>Aktivitas Saya</h1>
@@ -594,12 +608,12 @@ Replace:
 with:
 
 ```html
-    <h1>Aktivitas Saya</h1>
+    <h1 class="h1-compact">Aktivitas Saya</h1>
     <div class="pita-lambang" style="margin-bottom:16px;"><span></span><span></span><span></span><span></span></div>
     <div class="field">
 ```
 
-- [ ] **Step 2: Make the time range bold/tabular in `renderLaporan()`**
+- [ ] **Step 3: Make the time range bold/tabular in `renderLaporan()`**
 
 Replace:
 
@@ -617,33 +631,35 @@ with:
             '<span class="waktu-aktivitas">' + l.jamMulai + ' - ' + l.jamSelesai + '</span> ' + formatBadge(l.status) +
 ```
 
-- [ ] **Step 3: Verify the JS ids/functions the page depends on are untouched**
+- [ ] **Step 4: Verify the CSS addition and the JS ids/functions the page depends on are untouched**
 
-Search `src/Aktivitas.html` (Grep tool) for `id="daftarLaporan"`, `id="tanggal"`, `requireLogin()`, `muatLaporan`, `hapusLaporan`, `finalisasiLaporan` — all must still be present exactly as before (only the two blocks above should differ from the original file).
+Search `src/Shared.html` (Grep tool) for `h1.h1-compact` — must be present (confirms Step 1).
 
-- [ ] **Step 4: Run the regression test suite**
+Search `src/Aktivitas.html` (Grep tool) for `id="daftarLaporan"`, `id="tanggal"`, `requireLogin()`, `muatLaporan`, `hapusLaporan`, `finalisasiLaporan` — all must still be present exactly as before (only the markup block and the JS block from Steps 2-3 should differ from the original file).
+
+- [ ] **Step 5: Run the regression test suite**
 
 Run: `npm test`
 Expected: `Tests: 16 passed, 16 total`.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add src/Aktivitas.html
-git commit -m "feat: redesign Aktivitas.html with pita-lambang divider and bold time display"
+git add src/Aktivitas.html src/Shared.html
+git commit -m "feat: redesign Aktivitas.html with pita-lambang divider, bold time display, compact H1"
 ```
 
 ---
 
-## Task 8: Redesign `TambahAktivitas.html` (pita divider)
+## Task 8: Redesign `TambahAktivitas.html` (pita divider + compact H1)
 
 **Files:**
 - Modify: `src/TambahAktivitas.html`
 
 **Interfaces:**
-- Consumes: `.pita-lambang` (from Task 1).
+- Consumes: `.pita-lambang` (from Task 1), `h1.h1-compact` (from Task 7).
 
-- [ ] **Step 1: Add the pita-lambang divider under the (dynamic) H1**
+- [ ] **Step 1: Add the pita-lambang divider under the (dynamic) H1, and mark it compact**
 
 Replace:
 
@@ -656,17 +672,17 @@ Replace:
 with:
 
 ```html
-    <h1 id="judulHalaman">Tambah Aktivitas</h1>
+    <h1 id="judulHalaman" class="h1-compact">Tambah Aktivitas</h1>
     <div class="pita-lambang" style="margin-bottom:16px;"><span></span><span></span><span></span><span></span></div>
 
     <div class="field">
 ```
 
-(This page swaps `id="judulHalaman"`'s text between "Tambah Aktivitas" and "Edit Aktivitas" via JS at runtime — the divider is static markup below it and is unaffected either way.)
+(This page swaps `id="judulHalaman"`'s text between "Tambah Aktivitas" and "Edit Aktivitas" via JS at runtime — it only ever touches `.textContent`, never `.className`, so the added `class="h1-compact"` is unaffected either way. The divider is static markup below it and is unaffected too.)
 
 - [ ] **Step 2: Verify the ids/JS the page depends on are untouched**
 
-Search `src/TambahAktivitas.html` (Grep tool) for `id="judulHalaman"`, `id="btnSimpan"`, `google.script.url.getLocation`, `kompresGambar` — all must still be present exactly once each, confirming only the one line was added.
+Search `src/TambahAktivitas.html` (Grep tool) for `id="judulHalaman"`, `id="btnSimpan"`, `google.script.url.getLocation`, `kompresGambar` — all must still be present exactly once each. Also search for `h1-compact` — must be present once, confirming Task 7's class is reused correctly.
 
 - [ ] **Step 3: Run the regression test suite**
 
