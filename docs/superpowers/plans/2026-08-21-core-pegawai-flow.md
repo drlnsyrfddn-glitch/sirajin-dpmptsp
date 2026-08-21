@@ -34,19 +34,16 @@ Beberapa langkah **tidak bisa dijalankan otomatis oleh agent coding** — butuh 
 - Create: `package.json`
 - Create: `.gitignore`
 - Create: `jest.config.js`
-- Create: `appsscript.json`
-- Create: `src/backend/.gitkeep`
-- Create: `src/frontend/.gitkeep`
-- Create: `tests/.gitkeep`
+- Create: `src/appsscript.json`
 
 **Interfaces:**
-- Produces: struktur folder yang dipakai seluruh task berikutnya (`src/backend/*.js` untuk kode server, `src/frontend/*.html` untuk halaman, `tests/*.test.js` untuk Jest).
+- Produces: struktur folder yang dipakai seluruh task berikutnya. **`src/` sengaja FLAT** (tanpa subfolder `backend/`/`frontend`) — semua `.js` (server) dan `.html` (halaman) langsung di `src/*`. Kalau dipecah subfolder, `clasp push` membuat nama file Apps Script jadi berawalan path (`frontend/Login`, bukan `Login`), yang akan membuat routing `Code.js` (Task 7) salah rujuk. `tests/*.test.js` sengaja di luar `src/` supaya tidak ikut ter-push ke Apps Script.
 
 - [ ] **Step 1: Buat struktur folder**
 
 ```bash
 cd sirajin-morowali
-mkdir -p src/backend src/frontend tests
+mkdir -p src tests
 ```
 
 - [ ] **Step 2: Init npm & install Jest**
@@ -87,7 +84,7 @@ node_modules/
 
 `.clasp.json` diabaikan karena berisi `scriptId` unik milik deployment kamu — bukan sesuatu yang perlu dibagi lewat git.
 
-- [ ] **Step 6: Tulis `appsscript.json`** (manifest Apps Script, wajib ada sebelum `clasp push`)
+- [ ] **Step 6: Tulis `src/appsscript.json`** (manifest Apps Script, wajib ada di dalam folder yang sama dengan script — `src/`, bukan root proyek — sebelum `clasp push`)
 
 ```json
 {
@@ -106,20 +103,33 @@ node_modules/
 
 - [ ] **Step 7: 🔴 MANUAL (kamu sendiri) — buat Apps Script project & hubungkan clasp**
 
-Jalankan di terminal kamu sendiri (butuh browser buat login Google):
+Jalankan **dari root proyek** (folder `sirajin-morowali/`, BUKAN dari dalam `src/`) di terminal kamu sendiri (butuh browser buat login Google):
 
 ```bash
 npm install -g @google/clasp
 clasp login
-clasp create --title "SiRajin Morowali" --type webapp --rootDir ./src
+clasp create --title "SiRajin Morowali" --type webapp
 ```
 
-Setelah ini, `clasp` membuat `.clasp.json` di root proyek berisi `scriptId` project Apps Script kamu. **Catat scriptId ini** — dipakai lagi kalau perlu buka project lewat `clasp open`.
+**Jangan tambahkan flag `--rootDir` di perintah `clasp create` ini** — clasp punya bug dikenal ([google/clasp#923](https://github.com/google/clasp/issues/923)) yang menaruh `.clasp.json` DI DALAM folder rootDir itu sendiri, sehingga `clasp push`/`clasp open` berikutnya yang dijalankan dari root proyek tidak akan menemukan konfigurasinya. Alih-alih, `clasp create` tanpa `--rootDir` menaruh `.clasp.json` dengan benar di root proyek, lalu rootDir diset lewat edit manual:
+
+1. `clasp create` di atas membuat `.clasp.json` di root proyek, plus file bawaan `appsscript.json` dan `Code.js`/`Code.gs` contoh — juga di root proyek (bukan di `src/`). Hapus dua file bawaan itu (kita sudah punya `src/appsscript.json` sendiri dari Step 6, dan `src/Code.js` akan dibuat di Task 7):
+   ```bash
+   rm -f appsscript.json Code.js Code.gs
+   ```
+2. Buka `.clasp.json`, tambahkan baris `"rootDir": "src"` sehingga isinya kira-kira:
+   ```json
+   {
+     "scriptId": "ISI_OTOMATIS_OLEH_CLASP",
+     "rootDir": "src"
+   }
+   ```
+3. **Catat `scriptId`-nya** — dipakai lagi kalau perlu buka project lewat `clasp open`.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add package.json jest.config.js appsscript.json .gitignore src tests
+git add package.json jest.config.js .gitignore src tests
 git commit -m "chore: scaffold project structure, jest, clasp manifest"
 ```
 
@@ -128,11 +138,11 @@ git commit -m "chore: scaffold project structure, jest, clasp manifest"
 ### Task 2: Fungsi Utilitas Murni (TDD)
 
 **Files:**
-- Create: `src/backend/Utils.js`
+- Create: `src/Utils.js`
 - Test: `tests/utils.test.js`
 
 **Interfaces:**
-- Produces: `calculateDurationMinutes(jamMulai, jamSelesai)`, `formatDuration(totalMinutes)`, `isValidNIP(nip)`, `isValidTimeRange(jamMulai, jamSelesai)`, `parseTimeToMinutes(hhmm)` — dipakai oleh `Aktivitas.js` (Task 6) dan `Auth.js` (Task 4).
+- Produces: `calculateDurationMinutes(jamMulai, jamSelesai)`, `formatDuration(totalMinutes)`, `isValidNIP(nip)`, `isValidTimeRange(jamMulai, jamSelesai)`, `parseTimeToMinutes(hhmm)` — dipakai oleh `AktivitasService.js` (Task 6) dan `Auth.js` (Task 4).
 
 - [ ] **Step 1: Tulis test yang gagal (`tests/utils.test.js`)**
 
@@ -142,7 +152,7 @@ const {
   formatDuration,
   isValidNIP,
   isValidTimeRange
-} = require('../src/backend/Utils.js');
+} = require('../src/Utils.js');
 
 describe('calculateDurationMinutes', () => {
   test('menghitung durasi normal dalam menit', () => {
@@ -212,9 +222,9 @@ describe('isValidTimeRange', () => {
 - [ ] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `npm test`
-Expected: FAIL — `Cannot find module '../src/backend/Utils.js'`
+Expected: FAIL — `Cannot find module '../src/Utils.js'`
 
-- [ ] **Step 3: Implementasi `src/backend/Utils.js`**
+- [ ] **Step 3: Implementasi `src/Utils.js`**
 
 ```js
 function parseTimeToMinutes(hhmm) {
@@ -273,7 +283,7 @@ Expected: PASS — 10 test lolos
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/backend/Utils.js tests/utils.test.js
+git add src/Utils.js tests/utils.test.js
 git commit -m "feat: add pure utility functions for duration and NIP validation"
 ```
 
@@ -282,13 +292,13 @@ git commit -m "feat: add pure utility functions for duration and NIP validation"
 ### Task 3: Bootstrap Google Sheets & Drive
 
 **Files:**
-- Create: `src/backend/Setup.js`
+- Create: `src/Setup.js`
 
 **Interfaces:**
 - Consumes: tidak ada (task independen).
-- Produces: `setupSiRajin()` — fungsi one-time yang dijalankan manual dari editor Apps Script. Menyimpan `SPREADSHEET_ID`, `FOLDER_TEMPLATE_ID`, `FOLDER_FOTO_ID`, `FOLDER_PDF_ID` ke `PropertiesService.getScriptProperties()`, dipakai oleh `Auth.js` (Task 4) dan `Aktivitas.js` (Task 6).
+- Produces: `setupSiRajin()` — fungsi one-time yang dijalankan manual dari editor Apps Script. Menyimpan `SPREADSHEET_ID`, `FOLDER_TEMPLATE_ID`, `FOLDER_FOTO_ID`, `FOLDER_PDF_ID` ke `PropertiesService.getScriptProperties()`, dipakai oleh `Auth.js` (Task 4) dan `AktivitasService.js` (Task 6).
 
-- [ ] **Step 1: Tulis `src/backend/Setup.js`**
+- [ ] **Step 1: Tulis `src/Setup.js`**
 
 ```js
 function setupSiRajin() {
@@ -315,7 +325,7 @@ function setupSiRajin() {
     // Kolom B/C/D/E dipaksa teks polos ('@') — tanpa ini, Sheets otomatis
     // mengonversi "08:00" jadi nilai waktu (Date) dan NIP 18 digit jadi
     // Number yang kehilangan presisi (18 digit > Number.MAX_SAFE_INTEGER).
-    // Ini WAJIB diset sebelum baris data pertama ditulis oleh Aktivitas.js.
+    // Ini WAJIB diset sebelum baris data pertama ditulis oleh AktivitasService.js.
     aktivitasSheet.getRange('B:B').setNumberFormat('@'); // NIP
     aktivitasSheet.getRange('C:C').setNumberFormat('@'); // Tanggal (disimpan "YYYY-MM-DD")
     aktivitasSheet.getRange('D:E').setNumberFormat('@'); // Jam Mulai, Jam Selesai ("HH:MM")
@@ -369,7 +379,7 @@ Di editor Apps Script yang terbuka: pilih fungsi `setupSiRajin` di dropdown atas
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/backend/Setup.js
+git add src/Setup.js
 git commit -m "feat: add one-time setup for Sheets and Drive bootstrap"
 ```
 
@@ -378,19 +388,19 @@ git commit -m "feat: add one-time setup for Sheets and Drive bootstrap"
 ### Task 4: Autentikasi & Sesi
 
 **Files:**
-- Create: `src/backend/Auth.js`
+- Create: `src/Auth.js`
 - Test: `tests/auth.test.js`
 
 **Interfaces:**
 - Consumes: `isValidNIP` dari `Utils.js` (Task 2).
-- Produces: `loginPegawai(nip)`, `loginAdmin(nip, password)`, `validateToken(token)`, `hashPassword(password)` — dipakai oleh semua endpoint di `Aktivitas.js` (Task 6) dan halaman frontend (Task 8-10) sebagai gerbang tiap request.
+- Produces: `loginPegawai(nip)`, `loginAdmin(nip, password)`, `validateToken(token)`, `hashPassword(password)` — dipakai oleh semua endpoint di `AktivitasService.js` (Task 6) dan halaman frontend (Task 8-10) sebagai gerbang tiap request.
 
 Bagian yang bergantung `SpreadsheetApp`/`CacheService` tidak di-mock — diuji lewat checklist manual di Task 11. Yang diuji otomatis di sini hanya `hashPassword` (murni, deterministik).
 
 - [ ] **Step 1: Tulis test untuk `hashPassword` (`tests/auth.test.js`)**
 
 ```js
-const { hashPassword } = require('../src/backend/Auth.js');
+const { hashPassword } = require('../src/Auth.js');
 
 describe('hashPassword', () => {
   test('hash yang sama untuk input yang sama', () => {
@@ -410,9 +420,9 @@ describe('hashPassword', () => {
 - [ ] **Step 2: Jalankan test, pastikan gagal**
 
 Run: `npm test`
-Expected: FAIL — `Cannot find module '../src/backend/Auth.js'`
+Expected: FAIL — `Cannot find module '../src/Auth.js'`
 
-- [ ] **Step 3: Implementasi `src/backend/Auth.js`**
+- [ ] **Step 3: Implementasi `src/Auth.js`**
 
 ```js
 var SESSION_TTL_SECONDS = 21600; // 6 jam — batas keras CacheService
@@ -519,7 +529,7 @@ Expected: PASS — semua test `hashPassword` lolos (jalan lewat fallback Node `c
 - [ ] **Step 5: Commit**
 
 ```bash
-git add src/backend/Auth.js tests/auth.test.js
+git add src/Auth.js tests/auth.test.js
 git commit -m "feat: add pegawai/admin login and session token validation"
 ```
 
@@ -528,15 +538,15 @@ git commit -m "feat: add pegawai/admin login and session token validation"
 ### Task 5: Generate PDF dari Template
 
 **Files:**
-- Create: `src/backend/PdfGenerator.js`
+- Create: `src/PdfGenerator.js`
 
 **Interfaces:**
 - Consumes: `formatDuration` dari `Utils.js` (Task 2); `TEMPLATE_DOC_ID`, `FOLDER_PDF_ID` dari Script Properties (Task 3).
-- Produces: `generateLaporanPdf(pegawai, laporan)` → mengembalikan URL file PDF. Dipakai oleh `Aktivitas.js` (Task 6). `laporan` berbentuk `{ tanggal, jamMulai, jamSelesai, durasiMenit, namaAktivitas, uraian: string[], fotoBlobs: Blob[] }` (maks 3 elemen di `fotoBlobs`, slot kosong = `null`).
+- Produces: `generateLaporanPdf(pegawai, laporan)` → mengembalikan URL file PDF. Dipakai oleh `AktivitasService.js` (Task 6). `laporan` berbentuk `{ tanggal, jamMulai, jamSelesai, durasiMenit, namaAktivitas, uraian: string[], fotoBlobs: Blob[] }` (maks 3 elemen di `fotoBlobs`, slot kosong = `null`).
 
 Tidak ada unit test otomatis (bergantung penuh `DocumentApp`/`DriveApp`) — diverifikasi lewat checklist manual Task 11 dengan membandingkan hasil ke `template/laporan_kinerja_harian_v4.pdf`.
 
-- [ ] **Step 1: Implementasi `src/backend/PdfGenerator.js`**
+- [ ] **Step 1: Implementasi `src/PdfGenerator.js`**
 
 ```js
 function formatTanggalIndonesia(tanggalIso) {
@@ -607,7 +617,7 @@ function generateLaporanPdf(pegawai, laporan) {
 - [ ] **Step 2: Commit**
 
 ```bash
-git add src/backend/PdfGenerator.js
+git add src/PdfGenerator.js
 git commit -m "feat: add PDF generation from Google Docs template merge"
 ```
 
@@ -616,7 +626,7 @@ git commit -m "feat: add PDF generation from Google Docs template merge"
 ### Task 6: CRUD Laporan Aktivitas
 
 **Files:**
-- Create: `src/backend/Aktivitas.js`
+- Create: `src/AktivitasService.js`
 
 **Interfaces:**
 - Consumes: `validateToken` (Task 4), `calculateDurationMinutes`/`isValidTimeRange` (Task 2), `generateLaporanPdf` (Task 5).
@@ -624,7 +634,7 @@ git commit -m "feat: add PDF generation from Google Docs template merge"
 
 Tidak ada unit test otomatis (bergantung penuh `SpreadsheetApp`) — diverifikasi lewat checklist manual Task 11.
 
-- [ ] **Step 1: Implementasi `src/backend/Aktivitas.js`**
+- [ ] **Step 1: Implementasi `src/AktivitasService.js`**
 
 ```js
 function getAktivitasSheet_() {
@@ -879,7 +889,7 @@ function deleteAktivitas(token, idLaporan) {
 - [ ] **Step 2: Commit**
 
 ```bash
-git add src/backend/Aktivitas.js
+git add src/AktivitasService.js
 git commit -m "feat: add laporan aktivitas CRUD with draft/final status enforcement"
 ```
 
@@ -888,14 +898,15 @@ git commit -m "feat: add laporan aktivitas CRUD with draft/final status enforcem
 ### Task 7: Routing & Shell Frontend
 
 **Files:**
-- Create: `src/backend/Code.js`
-- Create: `src/frontend/Shared.html`
+- Create: `src/Code.js`
+- Create: `src/Shared.html`
+- Create: `src/Home.html`
 
 **Interfaces:**
 - Consumes: tidak ada dari task lain (murni routing).
 - Produces: `doGet(e)` — entry point Web App, dipakai Google saat halaman diakses. Template `Shared.html` (header, style dasar dari `design.md`, helper JS sesi) di-include di semua halaman Task 8-10 lewat `<?!= include('Shared'); ?>`.
 
-- [ ] **Step 1: Implementasi `src/backend/Code.js`**
+- [ ] **Step 1: Implementasi `src/Code.js`**
 
 ```js
 function include(filename) {
@@ -919,9 +930,12 @@ function doGet(e) {
 }
 ```
 
-- [ ] **Step 2: Tulis `src/frontend/Shared.html`** (style dasar mengikuti `design.md`, dishare semua halaman)
+- [ ] **Step 2: Tulis `src/Shared.html`** (style dasar mengikuti `design.md`, dishare semua halaman)
 
 ```html
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --blue-600: #2383E2;
@@ -1006,7 +1020,7 @@ function doGet(e) {
 </script>
 ```
 
-- [ ] **Step 3: Tulis `src/frontend/Home.html`** (landing sederhana)
+- [ ] **Step 3: Tulis `src/Home.html`** (landing sederhana)
 
 ```html
 <!DOCTYPE html>
@@ -1023,7 +1037,7 @@ function doGet(e) {
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/backend/Code.js src/frontend/Shared.html src/frontend/Home.html
+git add src/Code.js src/Shared.html src/Home.html
 git commit -m "feat: add web app routing and shared frontend shell"
 ```
 
@@ -1032,13 +1046,13 @@ git commit -m "feat: add web app routing and shared frontend shell"
 ### Task 8: Halaman Login Pegawai
 
 **Files:**
-- Create: `src/frontend/Login.html`
+- Create: `src/Login.html`
 
 **Interfaces:**
 - Consumes: `loginPegawai(nip)` (Task 4) lewat `google.script.run`.
 - Produces: menyimpan token ke `sessionStorage` lewat `setToken()` (dari `Shared.html`), redirect ke `?page=aktivitas`.
 
-- [ ] **Step 1: Implementasi `src/frontend/Login.html`**
+- [ ] **Step 1: Implementasi `src/Login.html`**
 
 ```html
 <!DOCTYPE html>
@@ -1101,7 +1115,7 @@ Sudah terdaftar di `pageMap` sejak Task 7 (`'login': 'Login'`) — tidak ada per
 - [ ] **Step 3: Commit**
 
 ```bash
-git add src/frontend/Login.html
+git add src/Login.html
 git commit -m "feat: add pegawai login page"
 ```
 
@@ -1110,12 +1124,12 @@ git commit -m "feat: add pegawai login page"
 ### Task 9: Halaman Aktivitas Pegawai (list per tanggal)
 
 **Files:**
-- Create: `src/frontend/Aktivitas.html`
+- Create: `src/Aktivitas.html`
 
 **Interfaces:**
 - Consumes: `listAktivitasByDate(token, tanggal)`, `finalizeAktivitas(token, idLaporan)`, `deleteAktivitas(token, idLaporan)` (Task 6) lewat `google.script.run`.
 
-- [ ] **Step 1: Implementasi `src/frontend/Aktivitas.html`**
+- [ ] **Step 1: Implementasi `src/Aktivitas.html`**
 
 ```html
 <!DOCTYPE html>
@@ -1205,7 +1219,7 @@ git commit -m "feat: add pegawai login page"
 - [ ] **Step 2: Commit**
 
 ```bash
-git add src/frontend/Aktivitas.html
+git add src/Aktivitas.html
 git commit -m "feat: add pegawai activity list page with date filter"
 ```
 
@@ -1214,14 +1228,14 @@ git commit -m "feat: add pegawai activity list page with date filter"
 ### Task 10: Halaman Tambah/Edit Aktivitas
 
 **Files:**
-- Create: `src/frontend/TambahAktivitas.html`
+- Create: `src/TambahAktivitas.html`
 
 **Interfaces:**
 - Consumes: `saveAktivitas(token, data)`, `getAktivitasById(token, idLaporan)` (Task 6) lewat `google.script.run`.
 
 Halaman ini melayani dua mode lewat query string: `?page=aktivitas/tambah` (buat baru) dan `?page=aktivitas/tambah&id=xxx` (edit — form terisi otomatis dari data lama, foto boleh dibiarkan kosong untuk mempertahankan foto lama).
 
-- [ ] **Step 1: Implementasi `src/frontend/TambahAktivitas.html`**
+- [ ] **Step 1: Implementasi `src/TambahAktivitas.html`**
 
 ```html
 <!DOCTYPE html>
@@ -1422,7 +1436,7 @@ Halaman ini melayani dua mode lewat query string: `?page=aktivitas/tambah` (buat
 - [ ] **Step 2: Commit**
 
 ```bash
-git add src/frontend/TambahAktivitas.html
+git add src/TambahAktivitas.html
 git commit -m "feat: add tambah aktivitas form with photo compression"
 ```
 
