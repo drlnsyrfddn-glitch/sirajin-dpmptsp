@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+  <head><base target="_top"><?!= include('AdminShared'); ?></head>
+  <body>
+    <h1>Kelola Pegawai</h1>
+
+    <button class="btn-primary" id="btnTambah" style="width:auto;">+ Tambah Pegawai</button>
+
+    <div class="card" id="formPegawai" style="display:none; margin-top:16px;">
+      <h3 id="formJudul">Tambah Pegawai</h3>
+      <input type="hidden" id="pegawaiId">
+      <div class="field"><label for="pNip">NIP</label><input type="text" id="pNip" inputmode="numeric"></div>
+      <div class="field"><label for="pNama">Nama Lengkap</label><input type="text" id="pNama"></div>
+      <div class="field"><label for="pJabatan">Jabatan</label><input type="text" id="pJabatan"></div>
+      <div class="field"><label for="pUnit">Unit Kerja</label><input type="text" id="pUnit"></div>
+      <button class="btn-primary" id="btnSimpanPegawai" style="width:auto;">Simpan</button>
+      <button class="btn-ghost" id="btnBatalPegawai" style="width:auto;">Batal</button>
+      <p class="error-message" id="formError" style="display:none;"></p>
+    </div>
+
+    <div class="table-wrap">
+      <table class="admin-table">
+        <thead><tr><th>NIP</th><th>Nama</th><th>Jabatan</th><th>Unit Kerja</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody id="tabelPegawai"><tr><td colspan="6" class="loading">Memuat...</td></tr></tbody>
+      </table>
+    </div>
+
+    <script>
+      renderAdminNav();
+
+      var daftarPegawai = [];
+
+      function muatPegawai() {
+        google.script.run
+          .withSuccessHandler(function (result) {
+            if (!result.success) {
+              if (!handleSessionExpiry(result.message, '?page=admin-login')) { alert(result.message); }
+              return;
+            }
+            daftarPegawai = result.data;
+            renderTabel();
+          })
+          .withFailureHandler(function (error) { alert('Gagal memuat: ' + error.message); })
+          .listPegawai(getToken());
+      }
+
+      function renderTabel() {
+        var tbody = document.getElementById('tabelPegawai');
+        if (daftarPegawai.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="loading">Belum ada pegawai.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = daftarPegawai.map(function (p) {
+          var badge = p.status === 'Aktif' ? '<span class="badge badge-final">Aktif</span>' : '<span class="badge badge-error">Nonaktif</span>';
+          var aksiToggle = p.status === 'Aktif'
+            ? '<a href="#" onclick="toggleStatus(\'' + p.id + '\', \'Nonaktif\'); return false;">Nonaktifkan</a>'
+            : '<a href="#" onclick="toggleStatus(\'' + p.id + '\', \'Aktif\'); return false;">Aktifkan</a>';
+          return '<tr><td>' + p.nip + '</td><td>' + p.namaLengkap + '</td><td>' + p.jabatan + '</td><td>' + p.unitKerja + '</td>' +
+            '<td>' + badge + '</td>' +
+            '<td><a href="#" onclick="editPegawai(\'' + p.id + '\'); return false;">Edit</a> | ' + aksiToggle + '</td></tr>';
+        }).join('');
+      }
+
+      function editPegawai(id) {
+        var p = daftarPegawai.filter(function (x) { return x.id === id; })[0];
+        if (!p) return;
+        document.getElementById('formJudul').textContent = 'Edit Pegawai';
+        document.getElementById('pegawaiId').value = p.id;
+        document.getElementById('pNip').value = p.nip;
+        document.getElementById('pNama').value = p.namaLengkap;
+        document.getElementById('pJabatan').value = p.jabatan;
+        document.getElementById('pUnit').value = p.unitKerja;
+        document.getElementById('formPegawai').style.display = 'block';
+      }
+
+      function resetForm() {
+        document.getElementById('formJudul').textContent = 'Tambah Pegawai';
+        document.getElementById('pegawaiId').value = '';
+        document.getElementById('pNip').value = '';
+        document.getElementById('pNama').value = '';
+        document.getElementById('pJabatan').value = '';
+        document.getElementById('pUnit').value = '';
+        document.getElementById('formError').style.display = 'none';
+      }
+
+      document.getElementById('btnTambah').addEventListener('click', function () {
+        resetForm();
+        document.getElementById('formPegawai').style.display = 'block';
+      });
+
+      document.getElementById('btnBatalPegawai').addEventListener('click', function () {
+        document.getElementById('formPegawai').style.display = 'none';
+      });
+
+      document.getElementById('btnSimpanPegawai').addEventListener('click', function () {
+        var errorEl = document.getElementById('formError');
+        errorEl.style.display = 'none';
+
+        var data = {
+          id: document.getElementById('pegawaiId').value || null,
+          nip: document.getElementById('pNip').value.trim(),
+          namaLengkap: document.getElementById('pNama').value.trim(),
+          jabatan: document.getElementById('pJabatan').value.trim(),
+          unitKerja: document.getElementById('pUnit').value.trim()
+        };
+
+        if (!data.nip || !data.namaLengkap || !data.jabatan || !data.unitKerja) {
+          errorEl.textContent = 'Semua field wajib diisi.';
+          errorEl.style.display = 'block';
+          return;
+        }
+
+        var btn = document.getElementById('btnSimpanPegawai');
+        btn.disabled = true;
+
+        google.script.run
+          .withSuccessHandler(function (result) {
+            btn.disabled = false;
+            if (result.success) {
+              document.getElementById('formPegawai').style.display = 'none';
+              muatPegawai();
+            } else {
+              if (!handleSessionExpiry(result.message, '?page=admin-login')) {
+                errorEl.textContent = result.message;
+                errorEl.style.display = 'block';
+              }
+            }
+          })
+          .withFailureHandler(function (error) {
+            btn.disabled = false;
+            errorEl.textContent = 'Gagal menyimpan: ' + error.message;
+            errorEl.style.display = 'block';
+          })
+          .savePegawai(getToken(), data);
+      });
+
+      function toggleStatus(id, statusBaru) {
+        if (!confirm('Yakin ubah status pegawai ini jadi "' + statusBaru + '"?')) return;
+        google.script.run
+          .withSuccessHandler(function (result) {
+            if (result.success) { muatPegawai(); }
+            else if (!handleSessionExpiry(result.message, '?page=admin-login')) { alert(result.message); }
+          })
+          .withFailureHandler(function (error) { alert('Gagal: ' + error.message); })
+          .setPegawaiStatus(getToken(), id, statusBaru);
+      }
+
+      muatPegawai();
+    </script>
+  </body>
+</html>
