@@ -2,15 +2,23 @@
 <html>
   <head><base target="_top"><?!= include('Shared'); ?></head>
   <body>
-    <main>
-    <h1>Login Pegawai</h1>
-    <div class="field">
-      <label for="nip">NIP</label>
-      <input type="text" id="nip" inputmode="numeric" placeholder="19920815 202421 1 005" autofocus>
-    </div>
-    <button class="btn-primary" id="btnLogin">Masuk</button>
-    <p class="error-message" id="errorMsg" style="display:none;"></p>
-
+    <main class="split-shell">
+      <section class="split-brand">
+        <div class="pita-lambang"><span></span><span></span><span></span><span></span></div>
+        <img class="lambang-logo" alt="Lambang Kabupaten Morowali">
+        <script>document.currentScript.previousElementSibling.src = SIRAJIN_LOGO_SRC;</script>
+        <p class="brand-name">SiRajin Morowali</p>
+        <p class="split-motto">Tepe Asa Maroso</p>
+      </section>
+      <section class="split-form">
+        <h1>Login Pegawai</h1>
+        <div class="field">
+          <label for="nip">NIP</label>
+          <input type="text" id="nip" inputmode="numeric" placeholder="19920815 202421 1 005" autofocus>
+        </div>
+        <button class="btn-primary" id="btnLogin">Masuk</button>
+        <p class="error-message" id="errorMsg" style="display:none;"></p>
+      </section>
     </main>
 
     <script>
