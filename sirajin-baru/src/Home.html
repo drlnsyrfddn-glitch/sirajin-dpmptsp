@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head><base target="_top"><?!= include('Shared'); ?>
+<style>
+.landing{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+.landing-top{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:var(--space-6) var(--space-8);
+}
+.kop{display:flex;align-items:center;gap:12px;}
+.kop-mark{
+  width:48px;height:48px;border-radius:50%;background:var(--surface);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  box-shadow:var(--shadow-sm);padding:5px;border:1px solid var(--border-soft);
+}
+.kop-mark img{width:100%;height:100%;object-fit:contain;}
+.kop-text{line-height:1.25;}
+.kop-text .k1{font-size:11px;letter-spacing:.06em;color:var(--ink-faint);text-transform:uppercase;font-weight:600;}
+.kop-text .k2{font-size:13.5px;font-weight:700;color:var(--primary);}
+
+.landing-main{
+  flex:1;
+  display:grid;
+  grid-template-columns:1.05fr 0.85fr;
+  align-items:center;
+  gap:var(--space-8);
+  padding:var(--space-6) var(--space-8) var(--space-9);
+  max-width:1280px;
+  margin:0 auto;
+  width:100%;
+}
+.landing-copy h1{
+  font-size:clamp(40px,6vw,68px);
+  line-height:1.02;
+  margin:14px 0 20px;
+}
+.landing-copy h1 .accent-word{color:var(--accent);font-style:italic;}
+.landing-copy .tagline{
+  font-size:17px;color:var(--ink-soft);max-width:480px;line-height:1.6;margin-bottom:var(--space-7);
+}
+.landing-actions{display:flex;flex-direction:column;gap:16px;align-items:flex-start;}
+.landing-actions .btn{padding:16px 30px;font-size:16px;}
+.admin-link{font-size:13px;color:var(--ink-faint);border-bottom:1px dashed var(--border);padding-bottom:1px;}
+.admin-link:hover{color:var(--primary);border-color:var(--primary);}
+
+.landing-visual{
+  position:relative;
+  aspect-ratio:1/1;
+  max-width:460px;
+  margin:0 auto;
+  display:flex;align-items:center;justify-content:center;
+}
+.landing-visual .seal-ring{position:absolute;inset:0;}
+.logo-plate{
+  position:relative;
+  background:var(--surface);
+  border:1px solid var(--border-soft);
+  border-radius:50%;
+  box-shadow:var(--shadow-lg);
+  width:74%;
+  aspect-ratio:1/1;
+  z-index:2;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;
+  padding:20px;
+}
+.logo-plate img{width:44%;height:44%;object-fit:contain;margin-bottom:10px;}
+.logo-plate-label{
+  font-family:var(--font-display);font-weight:700;font-size:17px;color:var(--primary);letter-spacing:.02em;line-height:1.2;
+}
+.logo-plate-sub{font-size:11px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.07em;text-align:center;}
+
+.landing-strip{
+  border-top:1px solid var(--border-soft);
+  padding:var(--space-5) var(--space-8);
+  display:flex;justify-content:space-between;align-items:center;
+  font-size:12px;color:var(--ink-faint);
+}
+.landing-strip .stat-row{display:flex;gap:28px;}
+.landing-strip .stat b{color:var(--ink);font-family:var(--font-display);font-size:15px;display:block;}
+
+@media (max-width: 880px){
+  .landing-top{padding:var(--space-5) var(--space-5);}
+  .landing-main{grid-template-columns:1fr;padding:var(--space-4) var(--space-5) var(--space-7);gap:var(--space-7);}
+  .landing-visual{order:-1;max-width:280px;}
+  .landing-copy h1{font-size:38px;}
+  .landing-actions .btn{width:100%;}
+  .landing-strip{flex-direction:column;gap:12px;align-items:flex-start;padding:var(--space-5);}
+}
+</style>
+</head>
+<body>
+<div class="landing">
+
+  <div class="landing-top">
+    <div class="kop">
+      <div class="kop-mark">
+        <img class="lambang-logo" alt="Lambang Kabupaten Morowali">
+        <script>document.currentScript.previousElementSibling.src = SIRAJIN_LOGO_SRC;</script>
+      </div>
+      <div class="kop-text">
+        <div class="k1">Pemerintah Kabupaten Morowali</div>
+        <div class="k2">DPMPTSP &middot; Sistem Internal</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="landing-main">
+    <div class="landing-copy">
+      <span class="eyebrow">Sistem Rekap Aktivitas Jurnal Instansi</span>
+      <h1>Si<span class="accent-word">Rajin</span><br>Morowali</h1>
+      <p class="tagline">Satu tempat untuk mencatat aktivitas dan bukti dukung kinerja harian pegawai DPMPTSP Kabupaten Morowali &mdash; cepat diisi, rapi terekap, mudah dipantau.</p>
+      <div class="landing-actions">
+        <a href="?page=login" class="btn btn-primary btn-lg">Login Pegawai</a>
+        <a href="?page=admin-login" class="admin-link">Masuk sebagai admin &rarr;</a>
+      </div>
+    </div>
+
+    <div class="landing-visual">
+      <div class="seal-ring">
+        <svg viewBox="0 0 400 400" width="100%" height="100%">
+          <circle cx="200" cy="200" r="188" fill="none" stroke="#C9D6CD" stroke-width="1.2" stroke-dasharray="2 7" stroke-linecap="round"/>
+          <circle cx="200" cy="200" r="160" fill="none" stroke="#DED6C0" stroke-width="1"/>
+          <g stroke="#C9D6CD" stroke-width="1.2">
+            <line x1="200" y1="8" x2="200" y2="24"/><line x1="200" y1="376" x2="200" y2="392"/>
+            <line x1="8" y1="200" x2="24" y2="200"/><line x1="376" y1="200" x2="392" y2="200"/>
+          </g>
+        </svg>
+      </div>
+      <div class="logo-plate">
+        <img class="lambang-logo" alt="Lambang Kabupaten Morowali">
+        <script>document.currentScript.previousElementSibling.src = SIRAJIN_LOGO_SRC;</script>
+        <span class="logo-plate-label">DPMPTSP</span>
+        <span class="logo-plate-sub">Kabupaten Morowali</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="landing-strip">
+    <span>SiRajin Morowali &mdash; bukti dukung kinerja harian, terekap otomatis.</span>
+    <div class="stat-row">
+      <div class="stat"><b>70</b>pegawai aktif</div>
+      <div class="stat"><b>1</b>pintu pelaporan</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
