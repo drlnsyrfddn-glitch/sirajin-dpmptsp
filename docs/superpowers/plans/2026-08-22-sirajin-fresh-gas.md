@@ -126,7 +126,7 @@ git commit -m "chore: scaffold sirajin-baru GAS project"
 - Reference: `src/Setup.js`, `src/Code.js` project lama
 
 **Interfaces:**
-- Produces: `setupAwal()` — buat spreadsheet (sheet `Pegawai`/`Admin`/`Aktivitas` + baris header sesuai spec §Data Model), buat folder Drive `SiRajin Foto` & `SiRajin PDF`, simpan `SPREADSHEET_ID`/`FOLDER_FOTO_ID`/`FOLDER_PDF_ID` ke Script Properties, buat 1 akun SuperAdmin awal. `setTemplateDocId(id)` — simpan `TEMPLATE_DOC_ID`. `doGet(e)` — routing `?page=` ke file HTML (map: home/login/aktivitas/aktivitas-tambah/admin-login/admin/admin-pegawai/admin-laporan/admin-akun), default `home`, set title + viewport meta + `XFrameOptionsMode.ALLOWALL`. `include(filename)`.
+- Produces: `setupAwal()` — buat spreadsheet (sheet `Pegawai`/`Admin`/`Aktivitas` + baris header sesuai spec §Data Model), buat folder Drive `SiRajin Foto` & `SiRajin PDF`, simpan `SPREADSHEET_ID`/`FOLDER_FOTO_ID`/`FOLDER_PDF_ID` ke Script Properties, buat 1 akun SuperAdmin awal. `setTemplateDocId(id)` — simpan `TEMPLATE_DOC_ID`. `doGet(e)` — routing `?page=` ke file HTML (map: home / login / admin-login / aktivitas / aktivitas/tambah / admin / admin/pegawai / admin/laporan / admin/akun — SLASH form per spec §Frontend), default `home`, set title + viewport meta + `XFrameOptionsMode.ALLOWALL`. `include(filename)`.
 
 - [ ] **Step 1: Tulis `src/Setup.js`** — header kolom persis spec; kolom Tanggal/Jam Mulai/Jam Selesai di-set format `@` (plain text); SuperAdmin awal NIP+password default yang dicetak ke log (bukan hardcode di kode produksi—log sekali saat setup).
 - [ ] **Step 2: Tulis `src/Code.js`** — `doGet` + `include`. Routing pakai key `?page=` sesuai spec §Frontend.
@@ -314,8 +314,8 @@ Berlaku untuk setiap halaman; jangan diulang per task tapi WAJIB dipatuhi:
 
 - [ ] **Step 1: Guard sesi** — di awal script: kalau `getToken()` kosong → `redirectTop('?page=login')`. Ambil sesi, tampilkan nama/jabatan di header.
 - [ ] **Step 2: Date-scroller** — deret tanggal (7 hari terakhir s.d hari ini), default hari ini, klik ganti tanggal → muat ulang daftar. Tanggal aktif ditandai.
-- [ ] **Step 3: Render daftar** — `renderLaporan()`: tiap item tampil nama aktivitas, jam mulai–selesai, durasi (`formatDuration` versi client), badge status (`Final` → label "Tersimpan" class `badge-final`; `Draft` → "Draft" class `badge-draft`), uraian (poin), thumbnail foto, tombol: Lihat PDF (buka `linkPdf`), Edit + Hapus (khusus Draft, Edit → `?page=aktivitas-tambah&id=<id>`), Finalisasi (khusus Draft, konfirmasi dulu). Kosong → pesan ramah + tombol tambah.
-- [ ] **Step 4: Tombol Tambah Aktivitas** → `?page=aktivitas-tambah`. Tombol Keluar → `clearToken()` + `redirectTop('?page=login')`.
+- [ ] **Step 3: Render daftar** — `renderLaporan()`: tiap item tampil nama aktivitas, jam mulai–selesai, durasi (`formatDuration` versi client), badge status (`Final` → label "Tersimpan" class `badge-final`; `Draft` → "Draft" class `badge-draft`), uraian (poin), thumbnail foto, tombol: Lihat PDF (buka `linkPdf`), Edit + Hapus (khusus Draft, Edit → `?page=aktivitas/tambah&id=<id>`), Finalisasi (khusus Draft, konfirmasi dulu). Kosong → pesan ramah + tombol tambah.
+- [ ] **Step 4: Tombol Tambah Aktivitas** → `?page=aktivitas/tambah`. Tombol Keluar → `clearToken()` + `redirectTop('?page=login')`.
 - [ ] **Step 5:** Verifikasi id yang dipakai script ada di markup; `npm test` hijau → Commit `git commit -m "feat: add Aktivitas.html (daftar + finalisasi)"`
 
 ---
