@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head><base target="_top"><?!= include('AdminShared'); ?>
+<style>
+.dash-grid{display:grid;grid-template-columns:1fr 1.6fr;gap:var(--space-6);align-items:start;}
+.progress-track{height:8px;border-radius:99px;background:var(--surface-alt);overflow:hidden;margin-top:14px;}
+.progress-fill{height:100%;background:var(--success);border-radius:99px;}
+.progress-label{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-faint);margin-top:8px;}
+
+@media (max-width: 980px){
+  .dash-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="admin-shell">
+
+  <div class="admin-page-head">
+    <div>
+      <span class="eyebrow">Pemantauan</span>
+      <h1 class="font-display">Dashboard Kepatuhan</h1>
+      <p class="desc">Ringkasan kepatuhan pelaporan aktivitas harian pegawai.</p>
+    </div>
+    <div class="filter-field">
+      <label for="tanggalDashboard">Tanggal</label>
+      <input type="date" class="input" id="tanggalDashboard">
+    </div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="card stat-card accent-primary">
+      <div class="stat-label">Pegawai Aktif</div>
+      <div class="stat-value tabular" id="statPegawaiAktif">-</div>
+      <div class="stat-foot">Terdaftar di seluruh bidang</div>
+    </div>
+    <div class="card stat-card accent-success">
+      <div class="stat-label">Sudah Lapor</div>
+      <div class="stat-value tabular" id="statSudahLapor">-</div>
+      <div class="stat-foot" id="statSudahLaporFoot">-</div>
+    </div>
+    <div class="card stat-card accent-danger">
+      <div class="stat-label">Belum Lapor</div>
+      <div class="stat-value tabular" id="statBelumLapor">-</div>
+      <div class="stat-foot">Perlu tindak lanjut</div>
+    </div>
+    <div class="card stat-card accent-gold">
+      <div class="stat-label">Rata-rata Jam Tercatat</div>
+      <div class="stat-value tabular" id="statRataRata">-</div>
+      <div class="stat-foot">Per pegawai per hari</div>
+    </div>
+  </div>
+
+  <div class="dash-grid">
+
+    <div class="card panel">
+      <div class="panel-head">
+        <h2>Belum Lapor Hari Ini</h2>
+        <span class="count" id="belumLaporCount">-</span>
+      </div>
+      <div class="panel-body">
+        <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        <div class="progress-label"><span id="progressLabel">-</span><span id="progressPercent">-</span></div>
+        <div class="alert-list" id="belumLaporList" style="margin-top:var(--space-5);"></div>
+      </div>
+    </div>
+
+    <div class="card panel">
+      <div class="panel-head">
+        <h2>Rekap Jam Kerja Pegawai</h2>
+        <span class="count">Minggu berjalan</span>
+      </div>
+      <div class="panel-body table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr><th>Pegawai</th><th class="num">Hari Lapor</th><th class="num">Total Jam</th><th>Kelengkapan</th></tr>
+          </thead>
+          <tbody id="rekapMingguanBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  // Port verbatim dari Aktivitas.html/TambahAktivitas.html supaya format
+  // durasi identik di seluruh aplikasi.
+  function formatDuration(totalMinutes) {
+    var jam = Math.floor(totalMinutes / 60);
+    var menit = totalMinutes % 60;
+    var parts = [];
+    if (jam > 0) parts.push(jam + ' Jam');
+    if (menit > 0 || jam === 0) parts.push(menit + ' Menit');
+    return parts.join(' ') + ' (' + totalMinutes + ' Menit)';
+  }
+
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function todayIso() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+
+  function muatRingkasan(tanggal) {
+    document.getElementById('belumLaporList').innerHTML = '';
+    document.getElementById('rekapMingguanBody').innerHTML = '';
+
+    google.script.run
+      .withSuccessHandler(function (result) {
+        if (!result.success) {
+          if (!handleSessionExpiry(result.message, '?page=admin-login')) {
+            showErrorRingkasan(result.message);
+          }
+          return;
+        }
+        renderRingkasan(result.data);
+      })
+      .withFailureHandler(function (error) {
+        showErrorRingkasan('Gagal memuat ringkasan: ' + error.message);
+      })
+      .getDashboardSummary(getToken(), tanggal);
+
+    google.script.run
+      .withSuccessHandler(function (result) {
+        if (!result.success) {
+          if (!handleSessionExpiry(result.message, '?page=admin-login')) {
+            showErrorRekap(result.message);
+          }
+          return;
+        }
+        renderRekapMingguan(result.data);
+      })
+      .withFailureHandler(function (error) {
+        showErrorRekap('Gagal memuat rekap mingguan: ' + error.message);
+      })
+      .getRekapMingguan(getToken(), tanggal);
+  }
+
+  function showErrorRingkasan(message) {
+    document.getElementById('belumLaporList').innerHTML =
+      '<div class="alert-row"><div style="flex:1;color:var(--danger);">' + escapeHtml(message) + '</div></div>';
+  }
+
+  function showErrorRekap(message) {
+    document.getElementById('rekapMingguanBody').innerHTML =
+      '<tr><td colspan="4" style="color:var(--danger);">' + escapeHtml(message) + '</td></tr>';
+  }
+
+  function renderRingkasan(data) {
+    var totalPegawaiAktif = data.totalPegawaiAktif;
+    var sudahLapor = data.sudahLapor;
+    var belumLapor = data.belumLapor || [];
+    var rekapJam = data.rekapJam || [];
+
+    document.getElementById('statPegawaiAktif').textContent = totalPegawaiAktif;
+
+    var persenLapor = totalPegawaiAktif > 0 ? Math.round((sudahLapor / totalPegawaiAktif) * 100) : 0;
+    document.getElementById('statSudahLapor').textContent = sudahLapor;
+    document.getElementById('statSudahLaporFoot').textContent = persenLapor + '% dari pegawai aktif';
+
+    document.getElementById('statBelumLapor').textContent = belumLapor.length;
+
+    var rataRataMenit = rekapJam.length > 0
+      ? Math.round(rekapJam.reduce(function (sum, p) { return sum + p.totalMenit; }, 0) / rekapJam.length)
+      : 0;
+    document.getElementById('statRataRata').textContent = rekapJam.length > 0 ? formatDuration(rataRataMenit) : '-';
+
+    document.getElementById('belumLaporCount').textContent = belumLapor.length + ' pegawai';
+    document.getElementById('progressFill').style.width = persenLapor + '%';
+    document.getElementById('progressLabel').textContent = sudahLapor + ' dari ' + totalPegawaiAktif + ' pegawai sudah lapor';
+    document.getElementById('progressPercent').textContent = persenLapor + '%';
+
+    var listEl = document.getElementById('belumLaporList');
+    if (belumLapor.length === 0) {
+      listEl.innerHTML = '<div class="alert-row"><div style="flex:1;color:var(--ink-soft);">Semua pegawai aktif sudah lapor.</div></div>';
+    } else {
+      listEl.innerHTML = belumLapor.map(function (p) {
+        return '<div class="alert-row">' +
+          '<div class="dot"></div>' +
+          '<div class="cell-avatar" style="width:26px;height:26px;font-size:10.5px;">' + escapeHtml(initials(p.nama)) + '</div>' +
+          '<div style="flex:1;">' +
+            '<div class="name">' + escapeHtml(p.nama) + '</div>' +
+            '<div class="role">' + escapeHtml(p.nip) + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+  }
+
+  function renderRekapMingguan(data) {
+    var bodyEl = document.getElementById('rekapMingguanBody');
+    if (!data || data.length === 0) {
+      bodyEl.innerHTML = '<tr><td colspan="4" style="color:var(--ink-faint);">Belum ada data pegawai aktif.</td></tr>';
+      return;
+    }
+    bodyEl.innerHTML = data.map(function (p) {
+      var badgeClass = p.lengkap ? 'badge-tersimpan' : 'badge-belum';
+      var badgeLabel = p.lengkap ? 'Lengkap' : 'Kurang';
+      return '<tr>' +
+        '<td><div class="cell-name">' +
+          '<div class="cell-avatar">' + escapeHtml(initials(p.nama)) + '</div>' +
+          '<div class="cell-name-text"><div class="n1">' + escapeHtml(p.nama) + '</div><div class="n2">' + escapeHtml(p.nip) + '</div></div>' +
+        '</div></td>' +
+        '<td class="num tabular">' + p.hariLapor + '/' + p.totalHari + ' hari</td>' +
+        '<td class="num tabular">' + formatDuration(p.totalMenit) + '</td>' +
+        '<td><span class="badge ' + badgeClass + '">' + badgeLabel + '</span></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    renderAdminNav('admin');
+
+    var tanggalInput = document.getElementById('tanggalDashboard');
+    tanggalInput.value = todayIso();
+    tanggalInput.addEventListener('change', function () {
+      if (tanggalInput.value) muatRingkasan(tanggalInput.value);
+    });
+
+    muatRingkasan(tanggalInput.value);
+  });
+</script>
+</body>
+</html>
