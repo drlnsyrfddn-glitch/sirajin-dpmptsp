@@ -64,11 +64,15 @@ describe('formatDuration', () => {
     expect(formatDuration(45)).toBe('45 Menit (45 Menit)');
   });
 
-  test('tepat 60 menit (kelipatan genap) hanya tampilkan jam', () => {
+  test('120 menit (kelipatan genap) hanya tampilkan jam', () => {
     expect(formatDuration(120)).toBe('2 Jam (120 Menit)');
   });
 
   test('jam dan menit sekaligus', () => {
     expect(formatDuration(210)).toBe('3 Jam 30 Menit (210 Menit)');
+  });
+
+  test('0 menit tetap tampilkan menit, tidak boleh string kosong', () => {
+    expect(formatDuration(0)).toBe('0 Menit (0 Menit)');
   });
 });
