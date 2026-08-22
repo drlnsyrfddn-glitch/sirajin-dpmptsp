@@ -47,7 +47,9 @@ function calculateDurationMinutes(mulai, selesai) {
 }
 
 /**
- * Format total menit jadi string ringkas, mis. 450 -> "7j 30m".
+ * Format total menit jadi string laporan, mis. 210 -> "3 Jam 30 Menit (210 Menit)".
+ * Dipakai untuk mengisi placeholder {{DURASI}} pada PDF laporan resmi,
+ * jadi formatnya harus identik dengan proyek lama.
  * Bagian jam disembunyikan jika 0 jam; bagian menit disembunyikan
  * jika 0 menit KECUALI jamnya juga 0 (supaya tidak pernah kosong).
  */
@@ -55,9 +57,9 @@ function formatDuration(menit) {
   var jam = Math.floor(menit / 60);
   var sisaMenit = menit % 60;
   var parts = [];
-  if (jam > 0) parts.push(jam + 'j');
-  if (sisaMenit > 0 || jam === 0) parts.push(sisaMenit + 'm');
-  return parts.join(' ');
+  if (jam > 0) parts.push(jam + ' Jam');
+  if (sisaMenit > 0 || jam === 0) parts.push(sisaMenit + ' Menit');
+  return parts.join(' ') + ' (' + menit + ' Menit)';
 }
 
 // Jembatan Node/Jest <-> Apps Script: blok ini tidak pernah jalan di

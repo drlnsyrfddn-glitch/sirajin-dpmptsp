@@ -61,14 +61,14 @@ describe('calculateDurationMinutes', () => {
 
 describe('formatDuration', () => {
   test('kurang dari 60 menit hanya tampilkan menit', () => {
-    expect(formatDuration(45)).toBe('45m');
+    expect(formatDuration(45)).toBe('45 Menit (45 Menit)');
   });
 
-  test('tepat 60 menit hanya tampilkan jam', () => {
-    expect(formatDuration(60)).toBe('1j');
+  test('tepat 60 menit (kelipatan genap) hanya tampilkan jam', () => {
+    expect(formatDuration(120)).toBe('2 Jam (120 Menit)');
   });
 
-  test('lebih dari 60 menit tampilkan jam dan menit', () => {
-    expect(formatDuration(450)).toBe('7j 30m');
+  test('jam dan menit sekaligus', () => {
+    expect(formatDuration(210)).toBe('3 Jam 30 Menit (210 Menit)');
   });
 });
