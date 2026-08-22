@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html>
+<head><base target="_top"><?!= include('Shared'); ?>
+<style>
+body{padding-bottom:110px;}
+.hint{font-size:12px;color:var(--ink-faint);}
+
+.form-header{
+  position:sticky;top:0;z-index:20;background:var(--surface);
+  border-bottom:1px solid var(--border-soft);
+  padding:var(--space-4) var(--space-5);
+  display:flex;align-items:center;gap:12px;
+}
+.form-header .icon-btn{
+  width:34px;height:34px;border-radius:50%;background:var(--surface-alt);display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.form-header .title{font-size:16px;flex:1;}
+.form-header .title .sub{display:block;font-size:11.5px;color:var(--ink-faint);font-weight:500;font-family:var(--font-ui);margin-top:1px;}
+.form-header-logo{
+  width:28px;height:28px;border-radius:50%;background:var(--surface-alt);display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;padding:3px;border:1px solid var(--border-soft);
+}
+.form-header-logo img{width:100%;height:100%;object-fit:contain;}
+
+.container{max-width:640px;margin:0 auto;padding:var(--space-5);}
+.form-section{margin-bottom:var(--space-6);}
+.form-section-title{
+  font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--primary);
+  margin-bottom:var(--space-4);display:flex;align-items:center;gap:8px;
+}
+.form-section-title::before{content:"";width:14px;height:1.5px;background:var(--accent);}
+
+.card-pad{padding:var(--space-5);}
+
+.row-time{display:grid;grid-template-columns:1fr auto 1fr;gap:var(--space-3);align-items:end;}
+.row-time .sep{padding-bottom:14px;color:var(--ink-faint);font-size:13px;}
+
+.durasi-info{font-size:12.5px;color:var(--ink-soft);margin-top:var(--space-3);}
+
+.point-list{display:flex;flex-direction:column;gap:10px;}
+.point-item{display:flex;align-items:flex-start;gap:10px;}
+.point-num{
+  width:26px;height:26px;border-radius:50%;background:var(--primary-soft);color:var(--primary);
+  font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:9px;
+  font-family:var(--font-display);
+}
+.point-item textarea{resize:vertical;min-height:46px;flex:1;}
+.point-remove{
+  flex-shrink:0;width:34px;height:34px;border-radius:8px;background:transparent;border:none;
+  display:flex;align-items:center;justify-content:center;color:var(--ink-faint);cursor:pointer;margin-top:6px;
+}
+.point-remove:hover{color:var(--danger);background:var(--danger-soft);}
+.add-point-btn{
+  display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--primary);
+  background:none;border:none;cursor:pointer;padding:10px 2px;
+}
+.add-point-btn:hover{text-decoration:underline;}
+
+.foto-lama-info{margin-bottom:var(--space-4);}
+.existing-photos{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:var(--space-4);}
+.existing-photos a{display:block;width:56px;height:56px;border-radius:8px;overflow:hidden;border:1px solid var(--border-soft);flex-shrink:0;}
+.existing-photos img{width:100%;height:100%;object-fit:cover;display:block;}
+
+.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);}
+.photo-slot{
+  position:relative;aspect-ratio:1/1;border-radius:var(--radius-md);border:1.5px dashed var(--border);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  color:var(--ink-faint);background:var(--surface-alt);overflow:hidden;cursor:pointer;
+}
+.photo-slot span{font-size:11.5px;font-weight:600;}
+.photo-slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
+.photo-slot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.photo-slot.has-img{border-style:solid;border-color:var(--border-soft);}
+.photo-remove{
+  position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:50%;background:rgba(33,31,25,.65);
+  display:none;align-items:center;justify-content:center;z-index:2;border:none;cursor:pointer;padding:0;
+}
+.photo-slot.has-img .photo-remove{display:flex;}
+
+.save-bar{
+  position:fixed;left:0;right:0;bottom:0;padding:var(--space-4) var(--space-5) calc(var(--space-4) + env(safe-area-inset-bottom));
+  background:linear-gradient(to top, var(--bg) 65%, transparent);
+  display:flex;gap:10px;justify-content:center;z-index:30;
+}
+.save-bar .btn{max-width:640px;}
+.save-bar .btn-secondary{flex:0 0 auto;}
+.save-bar .btn-primary{flex:1;}
+
+@media (min-width:720px){
+  .form-header{padding:var(--space-5) var(--space-8);}
+  .container{max-width:760px;padding:var(--space-7) var(--space-8);}
+  .photo-grid{grid-template-columns:repeat(4,1fr);max-width:420px;}
+  .save-bar{position:static;background:none;padding:0;justify-content:flex-end;margin-top:var(--space-7);}
+  .save-bar .btn-primary{flex:none;padding-left:36px;padding-right:36px;}
+}
+</style>
+</head>
+<body>
+
+<div class="form-header">
+  <a href="?page=aktivitas" class="icon-btn" aria-label="Kembali">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M19 12H5m0 0 6-6m-6 6 6 6" stroke="#211F19" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </a>
+  <div class="title font-display">
+    <span id="judulHalaman">Tambah Aktivitas</span>
+    <span class="sub" id="subTanggal">&nbsp;</span>
+  </div>
+  <div class="form-header-logo">
+    <img class="lambang-logo" alt="Lambang Kabupaten Morowali">
+    <script>document.currentScript.previousElementSibling.src = SIRAJIN_LOGO_SRC;</script>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="form-section">
+    <div class="form-section-title">Waktu &amp; Tanggal</div>
+    <div class="card card-pad">
+      <div class="field" style="margin-bottom:var(--space-4);">
+        <label for="tanggal">Tanggal</label>
+        <input type="date" class="input" id="tanggal">
+      </div>
+      <div class="row-time">
+        <div class="field" style="margin-bottom:0;">
+          <label for="jamMulai">Jam mulai</label>
+          <input type="time" class="input tabular" id="jamMulai">
+        </div>
+        <div class="sep">&ndash;</div>
+        <div class="field" style="margin-bottom:0;">
+          <label for="jamSelesai">Jam selesai</label>
+          <input type="time" class="input tabular" id="jamSelesai">
+        </div>
+      </div>
+      <p class="durasi-info tabular" id="durasiInfo"></p>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title">Aktivitas</div>
+    <div class="card card-pad">
+      <div class="field" style="margin-bottom:0;">
+        <label for="namaAktivitas">Nama aktivitas</label>
+        <input type="text" class="input" id="namaAktivitas" placeholder="Contoh: Peninjauan lapangan lokasi usaha pemohon IMB">
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title">Uraian Kegiatan</div>
+    <div class="card card-pad">
+      <div class="point-list" id="daftarUraian"></div>
+      <button type="button" class="add-point-btn" id="btnTambahPoin">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Tambah poin uraian
+      </button>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-title">Foto Kegiatan</div>
+    <div class="card card-pad">
+      <p class="loading foto-lama-info" id="fotoLamaInfo" style="display:none;">Laporan ini sudah punya foto. Kosongkan SEMUA kolom foto di bawah untuk mempertahankan foto lama apa adanya. Kalau kamu pilih foto baru di salah satu kolom saja, SEMUA foto lama akan diganti dengan foto yang baru kamu pilih (bukan cuma slot yang kamu isi) — jadi pilih ulang semua foto yang masih ingin kamu pakai.</p>
+      <div class="existing-photos" id="existingPhotos" style="display:none;"></div>
+      <div class="photo-grid" id="photoGrid">
+        <label class="photo-slot" id="slot0">
+          <input type="file" id="foto1" accept="image/*" capture="environment">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 8a2 2 0 0 1 2-2h1.2l.9-1.6A1.5 1.5 0 0 1 9.4 3.6h5.2a1.5 1.5 0 0 1 1.3.8L16.8 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z" stroke="#8A8471" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.4" stroke="#8A8471" stroke-width="1.5"/></svg>
+          <span>Ambil foto 1</span>
+          <button type="button" class="photo-remove" data-slot="slot0" aria-label="Hapus foto 1">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </label>
+        <label class="photo-slot" id="slot1">
+          <input type="file" id="foto2" accept="image/*" capture="environment">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 8a2 2 0 0 1 2-2h1.2l.9-1.6A1.5 1.5 0 0 1 9.4 3.6h5.2a1.5 1.5 0 0 1 1.3.8L16.8 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z" stroke="#8A8471" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.4" stroke="#8A8471" stroke-width="1.5"/></svg>
+          <span>Ambil foto 2</span>
+          <button type="button" class="photo-remove" data-slot="slot1" aria-label="Hapus foto 2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </label>
+      </div>
+      <p class="hint" style="margin-top:12px;">Maksimal 2 foto, langsung dari kamera HP atau galeri.</p>
+    </div>
+  </div>
+
+  <p class="error-message" id="errorMsg" style="display:none;"></p>
+
+</div>
+
+<div class="save-bar">
+  <a href="?page=aktivitas" class="btn btn-secondary btn-lg">Batal</a>
+  <button type="button" class="btn btn-primary btn-lg" id="btnSimpan">Simpan Aktivitas</button>
+</div>
+
+<script>
+  requireLogin();
+
+  // Port verbatim dari src/Aktivitas.html (client, sudah dipakai di halaman
+  // itu) supaya format durasi identik di seluruh aplikasi.
+  function formatDuration(totalMinutes) {
+    var jam = Math.floor(totalMinutes / 60);
+    var menit = totalMinutes % 60;
+    var parts = [];
+    if (jam > 0) parts.push(jam + ' Jam');
+    if (menit > 0 || jam === 0) parts.push(menit + ' Menit');
+    return parts.join(' ') + ' (' + totalMinutes + ' Menit)';
+  }
+
+  var DOW_FULL = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  var MONTH_FULL = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+  function updateSubTanggal() {
+    var v = document.getElementById('tanggal').value;
+    var el = document.getElementById('subTanggal');
+    if (!v) { el.textContent = ''; return; }
+    var parts = v.split('-');
+    var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    el.textContent = DOW_FULL[d.getDay()] + ', ' + d.getDate() + ' ' + MONTH_FULL[d.getMonth()] + ' ' + d.getFullYear();
+  }
+
+  function hitungDurasiMenit(jamMulai, jamSelesai) {
+    var m1 = jamMulai.split(':');
+    var m2 = jamSelesai.split(':');
+    return (Number(m2[0]) * 60 + Number(m2[1])) - (Number(m1[0]) * 60 + Number(m1[1]));
+  }
+
+  function updateDurasiTampilan() {
+    var jamMulai = document.getElementById('jamMulai').value;
+    var jamSelesai = document.getElementById('jamSelesai').value;
+    var el = document.getElementById('durasiInfo');
+    if (!jamMulai || !jamSelesai) { el.textContent = ''; return; }
+    var durasi = hitungDurasiMenit(jamMulai, jamSelesai);
+    if (durasi <= 0) {
+      el.textContent = 'Durasi belum valid — jam selesai harus lebih besar dari jam mulai.';
+      return;
+    }
+    el.textContent = 'Durasi: ' + formatDuration(durasi);
+  }
+
+  ['input', 'change'].forEach(function (evt) {
+    document.getElementById('tanggal').addEventListener(evt, updateSubTanggal);
+    document.getElementById('jamMulai').addEventListener(evt, updateDurasiTampilan);
+    document.getElementById('jamSelesai').addEventListener(evt, updateDurasiTampilan);
+  });
+
+  // window.location.search TIDAK bisa diandalkan di dalam iframe
+  // sandbox GAS (lihat catatan redirectTop di Shared.html - origin-nya
+  // beda dari URL exec yang keliatan di address bar). google.script.url
+  // .getLocation() adalah API resmi GAS buat baca parameter URL dari
+  // dalam sandbox - dipakai di sini, bukan URLSearchParams biasa.
+  // Ditemukan lewat verifikasi live Task 10: mode Edit selalu jatuh ke
+  // mode "Tambah" kosong, idLaporan selalu null.
+  var idLaporan = null;
+  var isEditMode = false;
+
+  var jumlahPoin = 0;
+  function renumberUraian() {
+    var badges = document.querySelectorAll('#daftarUraian .point-num');
+    badges.forEach(function (el, i) { el.textContent = i + 1; });
+    jumlahPoin = badges.length;
+  }
+
+  function tambahPoinUraian(nilaiAwal) {
+    jumlahPoin++;
+    var div = document.createElement('div');
+    div.className = 'point-item';
+    div.innerHTML = '<div class="point-num">' + jumlahPoin + '</div>' +
+      '<textarea class="textarea uraian-poin" placeholder="Uraikan poin kegiatan…"></textarea>' +
+      '<button type="button" class="point-remove" aria-label="Hapus poin uraian">' +
+      '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>' +
+      '</button>';
+    document.getElementById('daftarUraian').appendChild(div);
+    if (nilaiAwal) div.querySelector('textarea').value = nilaiAwal;
+  }
+  document.getElementById('btnTambahPoin').addEventListener('click', function () { tambahPoinUraian(); });
+
+  // Hapus + penomoran ulang lewat 1 listener terdelegasi di kontainer,
+  // supaya poin yang ditambah belakangan (via tambahPoinUraian) ikut
+  // kebagian tanpa perlu daftar listener per-poin. Minimal 1 poin selalu
+  // tersisa (server juga menolak uraian kosong).
+  document.getElementById('daftarUraian').addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('.point-remove');
+    if (!btn) return;
+    var list = document.getElementById('daftarUraian');
+    if (list.children.length <= 1) return;
+    btn.closest('.point-item').remove();
+    renumberUraian();
+  });
+
+  // linkFoto berisi URL halaman-view Drive (file.getUrl()), bukan URL gambar
+  // langsung — tidak bisa dipakai apa adanya sebagai src <img>. Port
+  // verbatim dari src/Aktivitas.html supaya thumbnail foto lama tampil
+  // konsisten dengan daftar aktivitas.
+  function driveThumbnailUrl(url) {
+    var match = String(url).match(/\/d\/([^\/]+)/);
+    if (!match) return url;
+    return 'https://drive.google.com/thumbnail?id=' + match[1] + '&sz=w200-h200';
+  }
+
+  function tampilkanFotoLama(linkFoto) {
+    if (!linkFoto || !linkFoto.length) return;
+    var wrap = document.getElementById('existingPhotos');
+    linkFoto.forEach(function (url) {
+      var a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      var img = document.createElement('img');
+      img.src = driveThumbnailUrl(url);
+      img.alt = 'Foto lama';
+      img.onerror = function () { a.style.visibility = 'hidden'; };
+      a.appendChild(img);
+      wrap.appendChild(a);
+    });
+    wrap.style.display = 'flex';
+  }
+
+  var today = new Date().toISOString().split('T')[0];
+
+  google.script.url.getLocation(function (location) {
+    idLaporan = location.parameter.id || null;
+    isEditMode = !!idLaporan;
+
+    if (isEditMode) {
+      document.getElementById('judulHalaman').textContent = 'Edit Aktivitas';
+      document.getElementById('fotoLamaInfo').style.display = 'block';
+      google.script.run
+        .withSuccessHandler(function (result) {
+          if (!result.success) {
+            if (!handleSessionExpiry(result.message)) {
+              document.getElementById('errorMsg').textContent = result.message;
+              document.getElementById('errorMsg').style.display = 'block';
+            }
+            return;
+          }
+          var l = result.data;
+          document.getElementById('tanggal').value = l.tanggal;
+          document.getElementById('jamMulai').value = l.jamMulai;
+          document.getElementById('jamSelesai').value = l.jamSelesai;
+          document.getElementById('namaAktivitas').value = l.namaAktivitas;
+          l.uraian.forEach(function (poin) { tambahPoinUraian(poin); });
+          tampilkanFotoLama(l.linkFoto);
+          updateSubTanggal();
+          updateDurasiTampilan();
+        })
+        .withFailureHandler(function (error) {
+          document.getElementById('errorMsg').textContent = 'Gagal memuat data: ' + error.message;
+          document.getElementById('errorMsg').style.display = 'block';
+        })
+        .getAktivitasById(getToken(), idLaporan);
+    } else {
+      document.getElementById('tanggal').value = today;
+      tambahPoinUraian(); // minimal 1 poin saat halaman dibuka mode "tambah baru"
+      updateSubTanggal();
+    }
+  });
+
+  // Pratinjau cepat (tanpa kompresi) begitu foto dipilih, murni buat
+  // thumbnail di slot. Kompresi sesungguhnya (kompresGambar di bawah) baru
+  // jalan saat Simpan ditekan — tidak perlu dobel proses di sini.
+  function pratinjauFoto(input, slotId) {
+    var file = input.files[0];
+    var slot = document.getElementById(slotId);
+    if (!file) {
+      slot.classList.remove('has-img');
+      var imgLama = slot.querySelector('img');
+      if (imgLama) imgLama.remove();
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var img = slot.querySelector('img');
+      if (!img) {
+        img = document.createElement('img');
+        slot.appendChild(img);
+      }
+      img.src = e.target.result;
+      slot.classList.add('has-img');
+    };
+    reader.readAsDataURL(file);
+  }
+  document.getElementById('foto1').addEventListener('change', function () { pratinjauFoto(this, 'slot0'); });
+  document.getElementById('foto2').addEventListener('change', function () { pratinjauFoto(this, 'slot1'); });
+
+  function hapusFotoSlot(slotId, inputId) {
+    var slot = document.getElementById(slotId);
+    var img = slot.querySelector('img');
+    if (img) img.remove();
+    slot.classList.remove('has-img');
+    document.getElementById(inputId).value = '';
+  }
+  // preventDefault + stopPropagation: tombol hapus ada di dalam <label>
+  // yang membungkus <input type="file"> — tanpa ini klik tombol hapus akan
+  // ikut membuka dialog pilih file (perilaku default label).
+  document.querySelectorAll('.photo-remove').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var slotId = btn.getAttribute('data-slot');
+      hapusFotoSlot(slotId, slotId === 'slot0' ? 'foto1' : 'foto2');
+    });
+  });
+
+  // onError: file rusak/bukan gambar (mis. HEIC yang gak didukung browser,
+  // file kepotong pas upload) bikin FileReader/Image gagal diam-diam tanpa
+  // event apapun kalau gak ada onerror — tombol macet permanen di
+  // "Menyusun laporan..." tanpa pesan, satu-satunya jalan keluar reload
+  // (hilang semua isian). Ditemukan lewat verifikasi manual Task 10.
+  function kompresGambar(file, callback, onError) {
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var img = new Image();
+      img.onload = function () {
+        var maxDim = 1280;
+        var scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        var canvas = document.createElement('canvas');
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        callback(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.onerror = onError;
+      img.src = e.target.result;
+    };
+    reader.onerror = onError;
+    reader.readAsDataURL(file);
+  }
+
+  function ambilFotoBase64(callback, onError) {
+    var fileInputs = [document.getElementById('foto1'), document.getElementById('foto2')];
+    // Slot terindeks (bukan push saat selesai) — kompresi tiap foto
+    // berjalan async dan bisa selesai di luar urutan, padahal urutan
+    // array ini menentukan foto masuk {{FOTO_1}}/{{FOTO_2}} yang mana.
+    var hasil = [null, null];
+    var selesai = 0;
+    var gagal = false;
+    var totalFile = fileInputs.filter(function (el) { return el.files.length > 0; }).length;
+
+    if (totalFile === 0) { callback([]); return; }
+
+    fileInputs.forEach(function (el, idx) {
+      if (el.files.length === 0) return;
+      kompresGambar(el.files[0], function (base64) {
+        if (gagal) return;
+        hasil[idx] = base64;
+        selesai++;
+        if (selesai === totalFile) callback(hasil.filter(Boolean));
+      }, function () {
+        if (gagal) return;
+        gagal = true;
+        onError();
+      });
+    });
+  }
+
+  document.getElementById('btnSimpan').addEventListener('click', function () {
+    var errorEl = document.getElementById('errorMsg');
+    errorEl.style.display = 'none';
+
+    var tanggal = document.getElementById('tanggal').value;
+    var jamMulai = document.getElementById('jamMulai').value;
+    var jamSelesai = document.getElementById('jamSelesai').value;
+    var namaAktivitas = document.getElementById('namaAktivitas').value.trim();
+    var uraian = Array.prototype.slice.call(document.querySelectorAll('.uraian-poin'))
+      .map(function (el) { return el.value.trim(); })
+      .filter(Boolean);
+
+    if (!tanggal || !jamMulai || !jamSelesai || !namaAktivitas || uraian.length === 0) {
+      errorEl.textContent = 'Semua field wajib diisi, minimal 1 poin uraian.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    if (jamSelesai <= jamMulai) {
+      errorEl.textContent = 'Jam selesai harus lebih besar dari jam mulai.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    var btn = document.getElementById('btnSimpan');
+    btn.disabled = true;
+    btn.textContent = 'Menyusun laporan...';
+
+    ambilFotoBase64(function (fotoBase64) {
+      if (!isEditMode && fotoBase64.length === 0) {
+        btn.disabled = false;
+        btn.textContent = 'Simpan Aktivitas';
+        errorEl.textContent = 'Minimal 1 foto kegiatan wajib diunggah.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      if (isEditMode && fotoBase64.length > 0) {
+        if (!confirm('Ini akan mengganti SEMUA foto lama laporan ini dengan foto yang baru kamu pilih. Foto lama yang tidak kamu unggah ulang akan hilang. Lanjutkan?')) {
+          btn.disabled = false;
+          btn.textContent = 'Simpan Aktivitas';
+          return;
+        }
+      }
+
+      google.script.run
+        .withSuccessHandler(function (result) {
+          btn.disabled = false;
+          btn.textContent = 'Simpan Aktivitas';
+          if (result.success) {
+            redirectTop('?page=aktivitas', 'Laporan tersimpan. Klik di sini untuk lanjut →');
+          } else if (!handleSessionExpiry(result.message)) {
+            errorEl.textContent = result.message;
+            errorEl.style.display = 'block';
+          }
+        })
+        .withFailureHandler(function (error) {
+          btn.disabled = false;
+          btn.textContent = 'Coba Lagi';
+          errorEl.textContent = 'Gagal menyimpan: ' + error.message + '. Data belum hilang, klik Coba Lagi.';
+          errorEl.style.display = 'block';
+        })
+        .saveAktivitas(getToken(), {
+          idLaporan: isEditMode ? idLaporan : null,
+          tanggal: tanggal,
+          jamMulai: jamMulai,
+          jamSelesai: jamSelesai,
+          namaAktivitas: namaAktivitas,
+          uraian: uraian,
+          fotoBase64: fotoBase64
+        });
+    }, function () {
+      btn.disabled = false;
+      btn.textContent = 'Simpan Aktivitas';
+      errorEl.textContent = 'Salah satu foto gagal diproses (kemungkinan file rusak atau bukan gambar). Coba pilih ulang foto itu.';
+      errorEl.style.display = 'block';
+    });
+  });
+</script>
+</body>
+</html>
