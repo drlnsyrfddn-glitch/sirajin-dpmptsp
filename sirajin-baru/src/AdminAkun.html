@@ -64,7 +64,7 @@
       </div>
       <div class="field" style="margin-bottom:0;">
         <label for="aPassword">Kata sandi</label>
-        <input class="input" type="password" id="aPassword" placeholder="Minimal 8 karakter">
+        <input class="input" type="password" id="aPassword" placeholder="Password untuk akun baru">
       </div>
     </div>
     <div class="modal-foot">
@@ -81,7 +81,7 @@
   // Placeholder password beda antara tambah (wajib diisi) dan edit (kosong =
   // pertahankan password lama) — lihat catatan semantik saveAdmin() di
   // AdminService.js: server cuma re-hash kalau data.password truthy.
-  var PLACEHOLDER_PASSWORD_BARU = 'Minimal 8 karakter';
+  var PLACEHOLDER_PASSWORD_BARU = 'Password untuk akun baru';
   var PLACEHOLDER_PASSWORD_EDIT = 'Kosongkan untuk mempertahankan password lama';
 
   // id akun yang lagi diedit di modal; null berarti mode tambah baru.

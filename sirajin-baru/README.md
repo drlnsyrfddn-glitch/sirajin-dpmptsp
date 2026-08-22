@@ -56,8 +56,9 @@ Dijalankan 2026-08-23 terhadap seluruh `sirajin-baru/src/`:
 2. `clasp create --type webapp --title "SiRajin Morowali"` → buat GAS project baru
 3. `clasp push`
 4. Buka editor, jalankan `Setup.setupAwal()` → buat sheet/folder + isi Script Properties
-5. Buat Google Docs template laporan, jalankan `setTemplateDocId('<id>')`
-6. `clasp deploy` → dapat URL `/exec` untuk presentasi
+5. Cek log eksekusi (panel **Eksekusi**/**Executions** di editor Apps Script, atau output `Logger.log` yang langsung muncul setelah `setupAwal()` selesai jalan) untuk ambil NIP + password SuperAdmin awal yang baru dibuat. Password ini cuma ditampilkan **sekali** — langsung simpan di tempat aman sebelum log-nya hilang/tergulung.
+6. Buat Google Docs template laporan, jalankan `setTemplateDocId('<id>')`
+7. `clasp deploy` → dapat URL `/exec` untuk presentasi
 
 ## Verifikasi visual (penting)
 

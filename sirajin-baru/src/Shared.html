@@ -186,6 +186,9 @@
      (fails WCAG AA). Remapped to ink-soft/success (both >=5:1, pass AA).
      Not a diff mistake vs the design bundle — an intentional a11y fix. */
   .badge-draft { background: var(--border-soft); color: var(--ink-soft); }
+  /* NOTE: .badge-tersimpan is currently unused/reserved — no page file
+     references it, the "Tersimpan" label uses .badge-final instead (Task
+     16 remap). Kept in place in case a future page needs this variant. */
   .badge-tersimpan { background: var(--gold-soft); color: var(--gold-text); }
   .badge-final { background: var(--success-soft); color: var(--success); }
   .badge-belum { background: var(--danger-soft); color: var(--danger); }
