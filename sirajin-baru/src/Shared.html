@@ -138,10 +138,25 @@
   .btn-sm { padding: 6px 14px; font-size: 13px; border-radius: var(--radius-sm); }
 
   /* Inline variant: usable in running text/links (e.g. redirectTop()'s
-     dynamically-inserted <a>) — must remain a real block-level-ish element
-     with visible padding/box, not reset to plain inline text. */
+     dynamically-inserted <a class="btn-primary btn-inline">, which does NOT
+     carry the bare .btn class). It must render as a full, padded button on
+     its own — the base .btn padding is repeated here so it does not depend
+     on .btn being present. This anchor is the ONLY visible content on a
+     GAS-sandbox-navigation fallback page, so it must look like a real button. */
   .btn-inline {
     display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.2;
+    padding: 10px 20px;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    text-decoration: none;
+    cursor: pointer;
     margin: 0 var(--space-1);
   }
 
@@ -166,6 +181,10 @@
     line-height: 1.4;
     white-space: nowrap;
   }
+  /* NOTE: badge-draft & badge-final are deliberately remapped away from the
+     bundle's gold/warning colors. Gold-as-text on gold-soft is only 2.64:1
+     (fails WCAG AA). Remapped to ink-soft/success (both >=5:1, pass AA).
+     Not a diff mistake vs the design bundle — an intentional a11y fix. */
   .badge-draft { background: var(--border-soft); color: var(--ink-soft); }
   .badge-tersimpan { background: var(--gold-soft); color: var(--gold-text); }
   .badge-final { background: var(--success-soft); color: var(--success); }
