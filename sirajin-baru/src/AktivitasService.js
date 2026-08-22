@@ -233,7 +233,7 @@ function saveAktivitas(token, data) {
 
   var idBaru = Utilities.getUuid();
   sheet.appendRow([
-    idBaru, session.nip, sebagaiTeks_(data.tanggal), sebagaiTeks_(data.jamMulai), sebagaiTeks_(data.jamSelesai), durasi,
+    idBaru, sebagaiTeks_(session.nip), sebagaiTeks_(data.tanggal), sebagaiTeks_(data.jamMulai), sebagaiTeks_(data.jamSelesai), durasi,
     data.namaAktivitas, data.uraian.join('\n'), linkFotoUrls.join('|'), pdfUrl,
     'Draft', now, now, ''
   ]);

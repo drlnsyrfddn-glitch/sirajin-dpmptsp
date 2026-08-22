@@ -69,7 +69,7 @@ function saveAdmin(token, data) {
     for (var j = 1; j < rows.length; j++) {
       if (rows[j][0] === data.id) {
         var passwordHash = data.password ? hashPassword(data.password) : rows[j][3];
-        sheet.getRange(j + 1, 2, 1, 4).setValues([[nipBersih, data.nama, passwordHash, data.level]]);
+        sheet.getRange(j + 1, 2, 1, 4).setValues([[sebagaiTeks_(nipBersih), data.nama, passwordHash, data.level]]);
         return { success: true, id: data.id };
       }
     }
@@ -77,7 +77,7 @@ function saveAdmin(token, data) {
   }
 
   var idBaru = Utilities.getUuid();
-  sheet.appendRow([idBaru, nipBersih, data.nama, hashPassword(data.password), data.level, 'Aktif']);
+  sheet.appendRow([idBaru, sebagaiTeks_(nipBersih), data.nama, hashPassword(data.password), data.level, 'Aktif']);
   return { success: true, id: idBaru };
 }
 

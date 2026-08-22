@@ -39,7 +39,7 @@ function setupAwal() {
     var defaultNip = '000000000000000001';
     var defaultPassword = Utilities.getUuid().replace(/-/g, '').slice(0, 12);
     adminSheet.appendRow([
-      Utilities.getUuid(), defaultNip, 'Super Admin',
+      Utilities.getUuid(), sebagaiTeks_(defaultNip), 'Super Admin',
       hashPassword(defaultPassword), 'SuperAdmin', 'Aktif'
     ]);
     Logger.log('SuperAdmin awal dibuat — NIP: ' + defaultNip + ' | Password: ' + defaultPassword +

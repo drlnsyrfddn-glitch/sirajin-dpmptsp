@@ -62,7 +62,7 @@ function savePegawai(token, data) {
     for (var j = 1; j < rows.length; j++) {
       if (rows[j][0] === data.id) {
         sheet.getRange(j + 1, 1, 1, 6).setValues([[
-          data.id, nipBersih, data.namaLengkap, data.jabatan, data.unitKerja, rows[j][5]
+          data.id, sebagaiTeks_(nipBersih), data.namaLengkap, data.jabatan, data.unitKerja, rows[j][5]
         ]]);
         return { success: true, id: data.id };
       }
@@ -71,7 +71,7 @@ function savePegawai(token, data) {
   }
 
   var idBaru = Utilities.getUuid();
-  sheet.appendRow([idBaru, nipBersih, data.namaLengkap, data.jabatan, data.unitKerja, 'Aktif']);
+  sheet.appendRow([idBaru, sebagaiTeks_(nipBersih), data.namaLengkap, data.jabatan, data.unitKerja, 'Aktif']);
   return { success: true, id: idBaru };
 }
 
