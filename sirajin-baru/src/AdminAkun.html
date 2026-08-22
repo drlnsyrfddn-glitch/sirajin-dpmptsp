@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head><base target="_top"><?!= include('AdminShared'); ?>
+<style>
+/* Halaman ini cuma pakai kelas admin-shell/panel/data-table/modal/badge dst
+   dari AdminShared.html & Shared.html — tidak ada gaya tambahan khusus
+   halaman ini. (:root TIDAK didefinisikan ulang di sini.) */
+</style>
+</head>
+<body>
+
+<div class="admin-shell" id="halamanAkun" style="display:none;">
+
+  <div class="admin-page-head">
+    <div>
+      <span class="eyebrow">Khusus SuperAdmin</span>
+      <h1 class="font-display">Kelola Akun Admin</h1>
+      <p class="desc">Mengatur siapa saja yang punya akses sebagai admin atau SuperAdmin di SiRajin Morowali.</p>
+    </div>
+    <button class="btn btn-primary" onclick="bukaModalTambah()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+      Tambah Akun Admin
+    </button>
+  </div>
+
+  <div class="card" style="padding:var(--space-4) var(--space-5);margin-bottom:var(--space-6);display:flex;gap:12px;align-items:flex-start;border-left:3px solid var(--gold);">
+    <svg width="17" height="17" style="flex-shrink:0;margin-top:2px;" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#B4863C" stroke-width="1.5"/><path d="M12 11v5.5M12 8v.01" stroke="#B4863C" stroke-width="1.6" stroke-linecap="round"/></svg>
+    <p style="font-size:13px;color:var(--ink-soft);line-height:1.55;">Halaman ini hanya bisa diakses oleh SuperAdmin. Akun yang dinonaktifkan tidak bisa login lagi sampai diaktifkan kembali.</p>
+  </div>
+
+  <div class="card panel">
+    <div class="panel-head">
+      <h2>Daftar Akun Admin</h2>
+      <span class="count" id="akunCount">-</span>
+    </div>
+    <div class="panel-body table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Nama</th><th>NIP</th><th>Level</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody id="akunBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="modalAkun">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 class="font-display" id="modalAkunTitle">Tambah Akun Admin</h3>
+      <button class="modal-close" onclick="closeModal('modalAkun')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label for="aNama">Nama lengkap</label><input class="input" type="text" id="aNama" placeholder="Nama admin"></div>
+      <div class="field"><label for="aNip">NIP</label><input class="input tabular" type="text" id="aNip" placeholder="18 digit NIP"></div>
+      <div class="field"><label for="aLevel">Level</label>
+        <select class="select" id="aLevel">
+          <option value="Admin">Admin</option>
+          <option value="SuperAdmin">SuperAdmin</option>
+        </select>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label for="aPassword">Kata sandi</label>
+        <input class="input" type="password" id="aPassword" placeholder="Minimal 8 karakter">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modalAkun')">Batal</button>
+      <button class="btn btn-primary" id="btnSimpanAkun" onclick="simpanAkun()">Simpan Akun</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var IKON_EDIT = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 20h4L18.5 9.5a2 2 0 0 0 0-2.8L17.3 5.5a2 2 0 0 0-2.8 0L4 16v4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+  var IKON_TOGGLE = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3v9M6.2 6.2a8 8 0 1 0 11.6 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+
+  // Placeholder password beda antara tambah (wajib diisi) dan edit (kosong =
+  // pertahankan password lama) — lihat catatan semantik saveAdmin() di
+  // AdminService.js: server cuma re-hash kalau data.password truthy.
+  var PLACEHOLDER_PASSWORD_BARU = 'Minimal 8 karakter';
+  var PLACEHOLDER_PASSWORD_EDIT = 'Kosongkan untuk mempertahankan password lama';
+
+  // id akun yang lagi diedit di modal; null berarti mode tambah baru.
+  var akunEditId = null;
+  // Cache hasil listAdmin() terakhir, dipakai buat isi ulang modal edit
+  // dan tentukan status lawan (Aktif <-> Nonaktif) tanpa round-trip ke server.
+  var daftarAkunCache = [];
+
+  // Guard level SuperAdmin — lapisan kedua di luar renderAdminNav() yang cuma
+  // menyembunyikan menu "Kelola Akun" dari Admin biasa (kemudahan UI, bukan
+  // batas keamanan). Halaman ini WAJIB menolak render + tolak fetch listAdmin
+  // kalau sesi bukan SuperAdmin, walau diakses langsung lewat URL ?page=admin/akun.
+  function cekAksesSuperAdmin() {
+    google.script.run
+      .withSuccessHandler(function (result) {
+        if (!result.success) {
+          if (!handleSessionExpiry(result.message, '?page=admin-login')) {
+            redirectTop('?page=admin-login', 'Sesi tidak valid. Klik di sini untuk login ulang →');
+          }
+          return;
+        }
+        if (result.session.level !== 'SuperAdmin') {
+          redirectTop('?page=admin', 'Halaman khusus SuperAdmin. Klik di sini untuk kembali →');
+          return;
+        }
+        document.getElementById('halamanAkun').style.display = '';
+        renderAdminNav('admin/akun');
+        muatAkun();
+      })
+      .withFailureHandler(function (error) {
+        showToast('Gagal memeriksa sesi: ' + error.message, true);
+      })
+      .getMySession(getToken());
+  }
+
+  function muatAkun() {
+    document.getElementById('akunBody').innerHTML =
+      '<tr><td colspan="5" style="color:var(--ink-faint);">Memuat data akun admin...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(function (result) {
+        if (!result.success) {
+          if (!handleSessionExpiry(result.message, '?page=admin-login')) {
+            tampilkanErrorTabel(result.message);
+          }
+          return;
+        }
+        daftarAkunCache = result.data || [];
+        renderAkun(daftarAkunCache);
+      })
+      .withFailureHandler(function (error) {
+        tampilkanErrorTabel('Gagal memuat data akun admin: ' + error.message);
+      })
+      .listAdmin(getToken());
+  }
+
+  function tampilkanErrorTabel(message) {
+    document.getElementById('akunCount').textContent = '-';
+    document.getElementById('akunBody').innerHTML =
+      '<tr><td colspan="5" style="color:var(--danger);">' + escapeHtml(message) + '</td></tr>';
+  }
+
+  function renderAkun(data) {
+    document.getElementById('akunCount').textContent = data.length + ' akun';
+
+    var bodyEl = document.getElementById('akunBody');
+    if (data.length === 0) {
+      bodyEl.innerHTML = '<tr><td colspan="5" style="color:var(--ink-faint);">Belum ada akun admin.</td></tr>';
+      return;
+    }
+
+    bodyEl.innerHTML = data.map(function (a) {
+      var aktif = a.status === 'Aktif';
+      var badgeClass = aktif ? 'badge-aktif' : 'badge-nonaktif';
+      var toggleLabel = aktif ? 'Nonaktifkan' : 'Aktifkan';
+      var levelBadge = a.level === 'SuperAdmin'
+        ? '<span class="badge badge-final">' + escapeHtml(a.level) + '</span>'
+        : '<span class="badge" style="background:var(--primary-soft);color:var(--primary);">' + escapeHtml(a.level) + '</span>';
+      var idAman = escapeHtml(a.id);
+      return '<tr>' +
+        '<td><div class="cell-name">' +
+          '<div class="cell-avatar">' + escapeHtml(initials(a.nama)) + '</div>' +
+          '<div class="cell-name-text"><div class="n1">' + escapeHtml(a.nama) + '</div></div>' +
+        '</div></td>' +
+        '<td class="tabular">' + escapeHtml(a.nip) + '</td>' +
+        '<td>' + levelBadge + '</td>' +
+        '<td><span class="badge ' + badgeClass + '">' + escapeHtml(a.status) + '</span></td>' +
+        '<td><div class="row-actions">' +
+          '<button type="button" class="icon-action" title="Edit" data-action="edit" data-id="' + idAman + '">' + IKON_EDIT + '</button>' +
+          '<button type="button" class="icon-action danger" title="' + toggleLabel + '" data-action="toggle" data-id="' + idAman + '">' + IKON_TOGGLE + '</button>' +
+        '</div></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function cariAkun(id) {
+    for (var i = 0; i < daftarAkunCache.length; i++) {
+      if (String(daftarAkunCache[i].id) === String(id)) return daftarAkunCache[i];
+    }
+    return null;
+  }
+
+  function bukaModalTambah() {
+    akunEditId = null;
+    document.getElementById('modalAkunTitle').textContent = 'Tambah Akun Admin';
+    document.getElementById('aNama').value = '';
+    document.getElementById('aNip').value = '';
+    document.getElementById('aLevel').value = 'Admin';
+    document.getElementById('aPassword').value = '';
+    document.getElementById('aPassword').placeholder = PLACEHOLDER_PASSWORD_BARU;
+    openModal('modalAkun');
+  }
+
+  function bukaModalEdit(id) {
+    var a = cariAkun(id);
+    if (!a) return;
+    akunEditId = a.id;
+    document.getElementById('modalAkunTitle').textContent = 'Edit Akun Admin';
+    document.getElementById('aNama').value = a.nama;
+    document.getElementById('aNip').value = a.nip;
+    document.getElementById('aLevel').value = a.level;
+    // Password SENGAJA dikosongkan (bukan diisi ulang) — lihat semantik edit
+    // di saveAdmin(): field kosong = pertahankan password lama di server.
+    document.getElementById('aPassword').value = '';
+    document.getElementById('aPassword').placeholder = PLACEHOLDER_PASSWORD_EDIT;
+    openModal('modalAkun');
+  }
+
+  function simpanAkun() {
+    var nama = document.getElementById('aNama').value.trim();
+    var nip = document.getElementById('aNip').value.trim();
+    var level = document.getElementById('aLevel').value;
+    var password = document.getElementById('aPassword').value;
+
+    // Validasi ringan di sisi klien — cermin dari cek saveAdmin() di
+    // AdminService.js, tapi server tetap satu-satunya sumber kebenaran
+    // (format NIP 18 digit, duplikasi NIP, & password wajib utk akun baru
+    // cuma dicek di server, dan pesannya ditampilkan apa adanya).
+    if (!nip) { showToast('NIP wajib diisi.', true); return; }
+    if (!nama) { showToast('Nama wajib diisi.', true); return; }
+
+    var data = { id: akunEditId, nip: nip, nama: nama, level: level, password: password };
+    var btn = document.getElementById('btnSimpanAkun');
+    btn.disabled = true;
+
+    google.script.run
+      .withSuccessHandler(function (result) {
+        btn.disabled = false;
+        if (!result.success) {
+          if (!handleSessionExpiry(result.message, '?page=admin-login')) {
+            showToast(result.message, true);
+          }
+          return;
+        }
+        closeModal('modalAkun');
+        showToast('Akun admin berhasil disimpan.');
+        muatAkun();
+      })
+      .withFailureHandler(function (error) {
+        btn.disabled = false;
+        showToast('Gagal menyimpan akun admin: ' + error.message, true);
+      })
+      .saveAdmin(getToken(), data);
+  }
+
+  function toggleStatusAkun(id) {
+    var a = cariAkun(id);
+    if (!a) return;
+    var statusBaru = a.status === 'Aktif' ? 'Nonaktif' : 'Aktif';
+    if (!confirm('Ubah status ' + a.nama + ' menjadi ' + statusBaru + '?')) return;
+
+    google.script.run
+      .withSuccessHandler(function (result) {
+        // Server bisa menolak (mis. 'Tidak bisa menonaktifkan akun sendiri.')
+        // — pesannya ditampilkan apa adanya, tidak ditebak/disaring di klien.
+        if (!result.success) {
+          if (!handleSessionExpiry(result.message, '?page=admin-login')) {
+            showToast(result.message, true);
+          }
+          return;
+        }
+        showToast('Status akun admin berhasil diubah.');
+        muatAkun();
+      })
+      .withFailureHandler(function (error) {
+        showToast('Gagal mengubah status akun admin: ' + error.message, true);
+      })
+      .setAdminStatus(getToken(), id, statusBaru);
+  }
+
+  document.getElementById('akunBody').addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('button[data-action]');
+    if (!btn) return;
+    var id = btn.getAttribute('data-id');
+    var action = btn.getAttribute('data-action');
+    if (action === 'edit') bukaModalEdit(id);
+    else if (action === 'toggle') toggleStatusAkun(id);
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    cekAksesSuperAdmin();
+  });
+</script>
+</body>
+</html>
