@@ -195,7 +195,7 @@
       return;
     }
     bodyEl.innerHTML = data.map(function (p) {
-      var badgeClass = p.lengkap ? 'badge-tersimpan' : 'badge-belum';
+      var badgeClass = p.lengkap ? 'badge-final' : 'badge-belum';
       var badgeLabel = p.lengkap ? 'Lengkap' : 'Kurang';
       return '<tr>' +
         '<td><div class="cell-name">' +
