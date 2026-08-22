@@ -139,13 +139,14 @@ Template punya topbar statis per halaman (4 link hardcoded, class `active` manua
 - Nav 4 link hardcoded template → **dihapus**, diganti topbar dinamis dari `AdminShared.html` (§6.6).
 
 ### 6.8 `AdminPegawai.html` (dari `template-baru/admin-pegawai.html`)
-- Filter bar (search/bidang/status) template — **opsional**: bisa dipasang sebagai filter client-side murni di atas data yang sudah dimuat (tidak butuh endpoint baru), atau disederhanakan dulu ke fungsi yang sudah ada (tanpa filter) supaya scope kecil. Rekomendasi: **filter client-side sederhana** (search by nama/NIP, tidak butuh server) — nice-to-have kecil, aman.
-- Modal "Tambah Pegawai" (`id="modalPegawai"`): field nama/NIP/bidang/jabatan tanpa id — tambah id (`pNip`, `pNama`, `pJabatan`, `pUnit`, dst — persis nama yang dipakai `AdminPegawai.html` sekarang) + `id="pegawaiId"` hidden + `id="formError"`.
+- Filter bar: search by nama/NIP + filter Status (Aktif/Nonaktif) — client-side murni di atas data yang sudah dimuat, tidak butuh endpoint baru. Filter "Bidang" template **tidak dipakai** — opsinya cuma 4 kategori karangan yang belum tentu cocok sama struktur unit kerja instansi yang sebenarnya.
+- Modal "Tambah Pegawai" template (`id="modalPegawai"`) **tidak dipakai** — diganti pola inline-card expand/collapse yang sudah ada & sudah teruji di `AdminPegawai.html` sekarang, supaya tidak perlu memperkenalkan pola modal baru sekaligus menghindari total collision id dengan `admin-akun.html` (lihat §6.9). Field "Bidang" (select, opsi karangan) di modal template juga **tidak dipakai** — jadi input teks bebas berlabel "Unit Kerja" (field yang sudah ada), bukan dropdown tertutup.
+- Field id: `pNip`, `pNama`, `pJabatan`, `pUnit` (persis nama yang dipakai sekarang) + `id="pegawaiId"` hidden + `id="formError"`.
 - Tabel: render dinamis dari `listPegawai()`, bukan 8 baris hardcode.
 
 ### 6.9 `AdminAkun.html` (dari `template-baru/admin-akun.html`)
-- Modal id **collision** dengan `admin-pegawai.html` (sama-sama `id="modalPegawai"`) — **ganti jadi `id="modalAdmin"`** di file ini.
-- Field modal: tambah id (`aNip`, `aNama`, `aLevel` select, `aPassword`, `id="adminId"` hidden, `id="formError"`).
+- Modal template (`id="modalPegawai"`, collision sama `admin-pegawai.html`) **tidak dipakai** — sama seperti §6.8, pakai pola inline-card yang sudah ada. Ini menghindari collision-nya sekaligus, bukan cuma mengganti nama id-nya.
+- Field id: `aNip`, `aNama`, `aLevel` select, `aPassword`, `id="adminId"` hidden, `id="formError"`.
 - Tabel: render dinamis dari `listAdmin()`.
 
 ### 6.10 `AdminLaporan.html` (dari `template-baru/admin-laporan.html`)
@@ -181,6 +182,6 @@ Sama seperti sebelumnya — staged, checkpoint di tengah, karena ini perubahan b
 |---|---|
 | `TambahAktivitas.html` — JS template (addPoint/handlePhoto) tidak sengaja ikut kepakai bareng JS asli, dobel-binding | Implementer harus membuang total blok `<script>` template itu, bukan menggabung — diverifikasi lewat review diff eksplisit |
 | Kontras warna baru belum pernah dites | Hitung ulang WCAG untuk tiap kombinasi teks/background baru sebelum push, sama seperti proses redesign sebelumnya (yang menemukan 3 kegagalan kontras nyata) |
-| Modal id collision (`modalPegawai` dipakai 2 file) | Sudah diketahui di awal (§6.9), diperbaiki sebagai bagian dari implementasi, bukan ditemukan pas review |
+| Modal id collision (`modalPegawai` dipakai 2 file) | Sudah diketahui di awal (§6.8/§6.9) — dihindari total dengan tidak memakai pola modal template sama sekali di kedua halaman, bukan cuma ganti nama id |
 | Filter/Ekspor CSV di `AdminLaporan.html` menjanjikan fitur yang belum ada di backend | Fitur yang tidak didukung backend dihilangkan dari markup, bukan dibiarkan jadi tombol mati (§6.10) |
 | Scope besar (9 file) bisa "terasa selesai" padahal ada id yang lolos gak ke-mapping | Setiap file punya tabel pemetaan id eksplisit (§6) yang jadi kontrak — plan implementasi memverifikasi tiap id via grep, bukan visual doang |
