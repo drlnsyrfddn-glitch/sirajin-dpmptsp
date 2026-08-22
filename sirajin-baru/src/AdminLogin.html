@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head><base target="_top"><?!= include('Shared'); ?>
+<style>
+body{
+  background:var(--primary-dark);
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(255,255,255,.05), transparent 40%),
+    radial-gradient(circle at 88% 82%, rgba(180,134,60,.12), transparent 45%);
+  min-height:100vh;
+}
+.auth-wrap{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:var(--space-6);
+}
+.auth-card{
+  width:100%;max-width:400px;background:var(--bg);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-lg);padding:var(--space-8) var(--space-7);position:relative;overflow:hidden;
+}
+.auth-seal{position:absolute;top:-60px;right:-60px;width:180px;height:180px;opacity:.6;}
+.auth-top{text-align:center;margin-bottom:var(--space-7);position:relative;display:flex;flex-direction:column;align-items:center;}
+.auth-top .kop-mark{
+  width:64px;height:64px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;
+  margin-bottom:var(--space-4);box-shadow:var(--shadow-md);border:1px solid var(--border-soft);padding:6px;
+}
+.kop-caption{display:flex;flex-direction:column;align-items:center;line-height:1.3;margin-bottom:var(--space-6);}
+.kop-caption .l1{font-family:var(--font-display);font-weight:700;font-size:17px;color:var(--primary);letter-spacing:.01em;}
+.kop-caption .l2{font-size:11.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-top:1px;}
+.auth-top h1{font-size:22px;margin-top:6px;}
+.auth-top p{font-size:13px;color:var(--ink-soft);margin-top:6px;max-width:280px;line-height:1.5;}
+.auth-top::after{
+  content:"";width:36px;height:1.5px;background:var(--border);margin-top:var(--space-6);display:block;
+}
+.auth-footer{
+  margin-top:var(--space-6);text-align:center;font-size:12px;color:var(--ink-faint);
+}
+</style>
+</head>
+<body>
+<div class="auth-wrap">
+  <div class="auth-card">
+    <svg class="auth-seal" viewBox="0 0 200 200"><circle cx="100" cy="100" r="94" fill="none" stroke="#DED6C0" stroke-width="1.2" stroke-dasharray="2 6"/><circle cx="100" cy="100" r="74" fill="none" stroke="#EFEADB" stroke-width="1"/></svg>
+
+    <div class="auth-top">
+      <div class="kop-mark">
+        <img class="lambang-logo" alt="Lambang Kabupaten Morowali">
+        <script>document.currentScript.previousElementSibling.src = SIRAJIN_LOGO_SRC;</script>
+      </div>
+      <div class="kop-caption">
+        <span class="l1">DPMPTSP</span>
+        <span class="l2">Kabupaten Morowali</span>
+      </div>
+      <span class="eyebrow">Panel Admin</span>
+      <h1 class="font-display">Masuk ke SiRajin</h1>
+      <p>Khusus admin &amp; superadmin DPMPTSP Kabupaten Morowali.</p>
+    </div>
+
+    <div class="field">
+      <label for="nip">NIP</label>
+      <input class="input tabular" type="text" id="nip" inputmode="numeric" placeholder="19850312 200901 1 003" autofocus>
+    </div>
+    <div class="field">
+      <label for="password">Kata sandi</label>
+      <input class="input" type="password" id="password" placeholder="••••••••">
+    </div>
+
+    <button type="button" class="btn btn-primary btn-block btn-lg" id="btnLogin">Masuk</button>
+    <p class="error-message" id="errorMsg" style="display:none;"></p>
+
+    <div class="auth-footer">
+      Lupa kata sandi? Hubungi SuperAdmin.
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('btnLogin').addEventListener('click', function () {
+    var nip = document.getElementById('nip').value.trim();
+    var password = document.getElementById('password').value;
+    var btn = document.getElementById('btnLogin');
+    var errorEl = document.getElementById('errorMsg');
+    errorEl.style.display = 'none';
+
+    if (!nip || !password) {
+      errorEl.textContent = 'NIP dan kata sandi wajib diisi.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Memproses...';
+
+    google.script.run
+      .withSuccessHandler(function (result) {
+        if (result.success) {
+          setToken(result.token);
+          redirectTop('?page=admin', 'Berhasil masuk. Klik di sini untuk lanjut →');
+          return;
+        }
+        btn.disabled = false;
+        btn.textContent = 'Masuk';
+        errorEl.textContent = result.message;
+        errorEl.style.display = 'block';
+      })
+      .withFailureHandler(function (error) {
+        btn.disabled = false;
+        btn.textContent = 'Masuk';
+        errorEl.textContent = 'Gagal terhubung ke server: ' + error.message + '. Coba lagi.';
+        errorEl.style.display = 'block';
+      })
+      .loginAdmin(nip, password);
+  });
+</script>
+</body>
+</html>
