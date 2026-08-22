@@ -1,0 +1,278 @@
+<?!= include('Shared'); ?>
+<style>
+  /* ===== Admin chrome — topbar, nav, shell, page head, stat cards, panel,
+     table, filter bar, alert list, modal. Consumes tokens dari Shared.html
+     (:root TIDAK didefinisikan ulang di sini). .btn/.card/.badge/.input/
+     .eyebrow dst juga dari Shared — jangan diulang di file ini. */
+
+  body { background: var(--bg); }
+
+  /* ---------- Topbar ---------- */
+  .admin-topbar {
+    background: var(--primary-dark);
+    color: #EFEADB;
+    padding: 0 var(--space-7);
+    display: flex; align-items: center; justify-content: space-between;
+    height: 66px;
+    position: sticky; top: 0; z-index: 40;
+    box-shadow: 0 4px 18px rgba(20, 49, 40, .18);
+  }
+  .admin-brand { display: flex; align-items: center; gap: 11px; }
+  .admin-brand .mark {
+    width: 34px; height: 34px; border-radius: 50%; background: #FBF8F1;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    padding: 3px; box-shadow: 0 0 0 1px rgba(255, 255, 255, .12);
+  }
+  .admin-brand-text { line-height: 1.2; }
+  .admin-brand-text .b1 { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: #FBF8F1; }
+  .admin-brand-text .b2 { font-size: 10.5px; color: #9FB6AA; letter-spacing: .03em; }
+
+  .admin-nav { display: flex; gap: 4px; }
+  .admin-nav a {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 9px 15px; border-radius: 8px; font-size: 13.5px; font-weight: 600; color: #B9CFC3;
+    text-decoration: none;
+    transition: background .15s ease, color .15s ease;
+  }
+  .admin-nav a svg { flex: none; }
+  .admin-nav a:hover { background: rgba(255, 255, 255, .06); color: #EFEADB; }
+  .admin-nav a.active { background: rgba(255, 255, 255, .1); color: #FBF8F1; }
+  .admin-topbar :focus-visible { outline-color: #fff; }
+
+  .admin-user { display: flex; align-items: center; gap: 12px; }
+  .admin-user-info { text-align: right; line-height: 1.2; }
+  .admin-user-info .u1 { font-size: 12.5px; font-weight: 700; color: #EFEADB; }
+  .admin-user-info .u2 { font-size: 10.5px; color: #9FB6AA; }
+  .admin-avatar {
+    width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .16);
+    display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 12.5px; font-weight: 700; color: #FBF8F1;
+    flex-shrink: 0;
+  }
+
+  /* Tombol ikon bulat/persegi-bulat di atas topbar gelap — dipakai untuk
+     toggle menu mobile DAN tombol keluar (menggantikan kelas .admin-logout
+     terpisah di bundle asli supaya tidak ada dua kelas untuk hal yang sama). */
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 8px; background: rgba(255, 255, 255, .06);
+    display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, .1);
+    color: #EFEADB; cursor: pointer; text-decoration: none; flex-shrink: 0;
+    transition: background .15s ease;
+  }
+  .icon-btn:hover { background: rgba(255, 255, 255, .14); }
+  .admin-mobile-toggle { display: none; }
+
+  /* ---------- Shell & page head ---------- */
+  .admin-shell { max-width: 1280px; margin: 0 auto; padding: var(--space-7); }
+  .admin-page-head { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: var(--space-6); gap: 16px; flex-wrap: wrap; }
+  .admin-page-head h1 { font-size: 26px; margin: 0 0 var(--space-1) 0; }
+  .admin-page-head .desc { color: var(--ink-soft); font-size: 13.5px; margin-top: 5px; }
+
+  /* ---------- Stat cards ---------- */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); margin-bottom: var(--space-7); }
+  .stat-card { padding: var(--space-5); position: relative; overflow: hidden; }
+  .stat-card .stat-label { font-size: 12px; color: var(--ink-faint); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .stat-card .stat-value { font-family: var(--font-display); font-size: 34px; margin-top: 8px; }
+  .stat-card .stat-foot { font-size: 12px; margin-top: 6px; color: var(--ink-soft); }
+  .stat-card.accent-primary { border-top: 3px solid var(--primary); }
+  .stat-card.accent-success { border-top: 3px solid var(--success); }
+  .stat-card.accent-danger { border-top: 3px solid var(--danger); }
+  .stat-card.accent-gold { border-top: 3px solid var(--gold); }
+
+  /* ---------- Panel ---------- */
+  .panel { margin-bottom: var(--space-6); }
+  .panel-head { display: flex; justify-content: space-between; align-items: center; padding: var(--space-5) var(--space-5) 0; }
+  .panel-head h2 { font-size: 16px; margin: 0; }
+  .panel-head .count { font-size: 12px; color: var(--ink-faint); font-weight: 600; }
+  .panel-body { padding: var(--space-5); }
+
+  /* ---------- Table ---------- */
+  .table-wrap { overflow-x: auto; }
+  table.data-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .data-table thead th {
+    text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-faint);
+    font-weight: 700; padding: 10px 14px; border-bottom: 1.5px solid var(--border); white-space: nowrap;
+  }
+  .data-table tbody td { padding: 13px 14px; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
+  .data-table tbody tr:last-child td { border-bottom: none; }
+  .data-table tbody tr:hover { background: var(--surface-alt); }
+  .data-table td.num, .data-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .cell-name { display: flex; align-items: center; gap: 10px; }
+  .cell-avatar {
+    width: 30px; height: 30px; border-radius: 50%; background: var(--primary-soft); color: var(--primary);
+    display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 700; font-size: 12px; flex-shrink: 0;
+  }
+  .cell-name-text .n1 { font-weight: 600; color: var(--ink); }
+  .cell-name-text .n2 { font-size: 11.5px; color: var(--ink-faint); }
+  .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .icon-action {
+    width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center;
+    color: var(--ink-faint); border: 1px solid transparent; background: none; cursor: pointer;
+  }
+  .icon-action:hover { background: var(--primary-soft); color: var(--primary); border-color: var(--border); }
+  .icon-action.danger:hover { background: var(--danger-soft); color: var(--danger); }
+
+  /* ---------- Filter bar ---------- */
+  .filter-bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: var(--space-5); }
+  .filter-field { display: flex; flex-direction: column; gap: 6px; }
+  .filter-field label { font-size: 11.5px; font-weight: 600; color: var(--ink-faint); text-transform: uppercase; letter-spacing: .03em; }
+  .filter-field .input, .filter-field .select { padding: 10px 12px; font-size: 13.5px; min-width: 170px; }
+  .filter-bar .btn { padding: 10.5px 18px; font-size: 13.5px; }
+
+  /* ---------- Alert / empty-state list ---------- */
+  .alert-list { display: flex; flex-direction: column; gap: 0; }
+  .alert-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border-soft); }
+  .alert-row:last-child { border-bottom: none; }
+  .alert-row .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--danger); flex-shrink: 0; }
+  .alert-row .name { font-weight: 600; font-size: 13.5px; flex: 1; }
+  .alert-row .role { font-size: 11.5px; color: var(--ink-faint); }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(20, 49, 40, .45); backdrop-filter: blur(2px);
+    display: none; align-items: center; justify-content: center; z-index: 100; padding: var(--space-5);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
+    width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto;
+  }
+  .modal-head {
+    display: flex; justify-content: space-between; align-items: center; padding: var(--space-5) var(--space-5);
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .modal-head h3 { font-size: 17px; margin: 0; }
+  .modal-close { width: 30px; height: 30px; border-radius: 8px; background: var(--surface-alt); display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; color: var(--ink-soft); }
+  .modal-body { padding: var(--space-5); }
+  .modal-foot { display: flex; gap: 10px; justify-content: flex-end; padding: var(--space-4) var(--space-5); border-top: 1px solid var(--border-soft); }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 1080px) {
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 880px) {
+    .admin-nav {
+      display: none;
+      position: absolute; top: 66px; left: 0; right: 0;
+      background: var(--primary-dark);
+      flex-direction: column; gap: 2px;
+      padding: var(--space-3);
+      box-shadow: var(--shadow-md);
+      z-index: 39;
+    }
+    .admin-nav.mobile-open { display: flex; }
+    .admin-mobile-toggle { display: flex; }
+    .admin-user-info { display: none; }
+    .admin-shell { padding: var(--space-5); }
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+    .admin-page-head h1 { font-size: 22px; }
+  }
+</style>
+<script>
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // Inisial 1-2 huruf dari nama (mis. "Rahmawati S." -> "RS") buat avatar
+  // bulatan di topbar/tabel admin. Nama kosong/aneh gak bikin crash.
+  function initials(nama) {
+    var kata = String(nama || '').trim().split(/\s+/).filter(Boolean);
+    if (kata.length === 0) return '?';
+    if (kata.length === 1) return kata[0].substring(0, 2).toUpperCase();
+    return (kata[0][0] + kata[kata.length - 1][0]).toUpperCase();
+  }
+
+  function requireAdminLogin() {
+    if (!getToken()) { redirectTop('?page=admin-login', 'Sesi belum login. Klik di sini untuk masuk →'); return true; }
+    return false;
+  }
+
+  // Modal generik: markup <div class="modal-overlay" id="..."> sudah statis
+  // di HTML tiap halaman (Task 16-19), fungsi ini cuma toggle class 'open'.
+  function openModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.add('open');
+  }
+  function closeModal(id) {
+    var el = document.getElementById(id);
+    if (el) el.classList.remove('open');
+  }
+
+  // Nav admin disembunyikan lewat media query di layar ≤880px; tombol
+  // hamburger di topbar toggle class 'mobile-open' buat munculkan dropdown-nya.
+  function toggleAdminNav() {
+    var nav = document.getElementById('adminNavLinks');
+    if (nav) nav.classList.toggle('mobile-open');
+  }
+
+  var ADMIN_NAV_ICONS = {
+    dashboard: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="1.5" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="1.5" y="9" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5.5" height="5.5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>',
+    pegawai: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="5.5" cy="5" r="2.2" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 14c0-2.4 1.8-4 4-4s4 1.6 4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="11.5" cy="4.5" r="1.7" stroke="currentColor" stroke-width="1.2"/><path d="M9.8 8.3c.5-.2 1.1-.3 1.7-.3 2 0 3.5 1.4 3.5 3.6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
+    laporan: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3.5 1.5h6l3 3v10h-9v-13z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6 8h4M6 10.5h4M6 5.5h1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>',
+    admin: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M7.2 7.2 14 14M11 10.5l1.5 1.5M13 8.5l1.5 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+    keluar: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="#EFEADB" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    menu: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h16" stroke="#EFEADB" stroke-width="1.8" stroke-linecap="round"/></svg>'
+  };
+
+  // halamanAktif: kunci pageMap halaman saat ini (mis. 'admin/pegawai') -
+  // dipakai buat highlight link yang sedang aktif di nav. Server (Code.js)
+  // sudah tahu halaman mana yang di-render lewat parameter ?page=, jadi
+  // tiap halaman tinggal kirim kuncinya sendiri saat manggil renderAdminNav()
+  // daripada baca ulang URL dari sisi client (tidak bisa diandalkan di
+  // dalam iframe sandbox, lihat catatan redirectTop di Shared.html).
+  function renderAdminNav(halamanAktif) {
+    if (requireAdminLogin()) return;
+
+    var topbarHtml =
+      '<header class="admin-topbar">' +
+        '<div class="admin-brand">' +
+          '<button class="icon-btn admin-mobile-toggle" aria-label="Menu" onclick="toggleAdminNav()">' + ADMIN_NAV_ICONS.menu + '</button>' +
+          '<div class="mark"><img class="lambang-logo" src="' + SIRAJIN_LOGO_SRC + '" alt="Lambang Kabupaten Morowali"></div>' +
+          '<div class="admin-brand-text"><div class="b1">SiRajin Morowali</div><div class="b2">Panel Admin</div></div>' +
+        '</div>' +
+        '<nav class="admin-nav" id="adminNavLinks"></nav>' +
+        '<div class="admin-user">' +
+          '<div class="admin-user-info"><div class="u1" id="adminUserNama"></div><div class="u2" id="adminUserLevel"></div></div>' +
+          '<div class="admin-avatar" id="adminUserAvatar"></div>' +
+          '<a href="#" class="icon-btn" title="Keluar" onclick="adminLogout(); return false;">' + ADMIN_NAV_ICONS.keluar + '</a>' +
+        '</div>' +
+      '</header>';
+    document.body.insertAdjacentHTML('afterbegin', topbarHtml);
+
+    google.script.run
+      .withSuccessHandler(function (result) {
+        if (!result.success) {
+          if (!handleSessionExpiry(result.message, '?page=admin-login')) { redirectTop('?page=admin-login', 'Sesi tidak valid. Klik di sini untuk login ulang →'); }
+          return;
+        }
+        var session = result.session;
+        function link(page, kunci, icon, label) {
+          var active = kunci === halamanAktif ? ' active' : '';
+          return '<a class="' + active.trim() + '" href="?page=' + page + '">' + icon + label + '</a>';
+        }
+        var navLinks = link('admin', 'admin', ADMIN_NAV_ICONS.dashboard, 'Dashboard') +
+          link('admin/pegawai', 'admin/pegawai', ADMIN_NAV_ICONS.pegawai, 'Kelola Pegawai') +
+          link('admin/laporan', 'admin/laporan', ADMIN_NAV_ICONS.laporan, 'Kelola Laporan') +
+          (session.level === 'SuperAdmin' ? link('admin/akun', 'admin/akun', ADMIN_NAV_ICONS.admin, 'Kelola Admin') : '');
+        document.getElementById('adminNavLinks').innerHTML = navLinks;
+        // textContent, bukan innerHTML — nama/level tak perlu escapeHtml() di sini.
+        document.getElementById('adminUserNama').textContent = session.nama;
+        document.getElementById('adminUserLevel').textContent = session.level;
+        document.getElementById('adminUserAvatar').textContent = initials(session.nama);
+      })
+      .withFailureHandler(function (error) {
+        console.error('Gagal memuat sesi admin: ' + error.message);
+      })
+      .getMySession(getToken());
+  }
+
+  function adminLogout() {
+    clearToken();
+    redirectTop('?page=admin-login', 'Berhasil keluar. Klik di sini →');
+  }
+</script>
