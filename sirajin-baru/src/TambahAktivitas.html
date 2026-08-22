@@ -274,6 +274,21 @@ body{padding-bottom:110px;}
   }
   document.getElementById('btnTambahPoin').addEventListener('click', function () { tambahPoinUraian(); });
 
+  // Poin uraian dulunya <input type="text"> (src/TambahAktivitas.html lama)
+  // yang secara struktural gak bisa nampung newline. Markup bundle baru
+  // pakai <textarea> (biar bisa multi-baris di layar), tapi itu berarti
+  // Enter bisa nyisipin '\n' asli ke value-nya — dan server nyimpen semua
+  // poin uraian digabung satu sel pakai '\n' sebagai pemisah ANTAR poin
+  // (lihat AktivitasService.js: data.uraian.join('\n'), dibaca balik lewat
+  // .split('\n')). 1 poin logis yang ketik-Enter di tengahnya jadi 2 poin
+  // kepisah pas laporan ini dibuka lagi di mode edit / di-render ulang ke
+  // PDF, tanpa error apapun. Cegah Enter bikin newline dari sumbernya.
+  document.getElementById('daftarUraian').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && e.target.classList && e.target.classList.contains('uraian-poin')) {
+      e.preventDefault();
+    }
+  });
+
   // Hapus + penomoran ulang lewat 1 listener terdelegasi di kontainer,
   // supaya poin yang ditambah belakangan (via tambahPoinUraian) ikut
   // kebagian tanpa perlu daftar listener per-poin. Minimal 1 poin selalu
@@ -462,8 +477,13 @@ body{padding-bottom:110px;}
     var jamMulai = document.getElementById('jamMulai').value;
     var jamSelesai = document.getElementById('jamSelesai').value;
     var namaAktivitas = document.getElementById('namaAktivitas').value.trim();
+    // Jaga-jaga tambahan di luar keydown Enter di atas: paste/drag-drop teks
+    // yang mengandung '\n' tetap bisa lolos ke value textarea tanpa lewat
+    // event keydown sama sekali. Kolaps newline apa pun jadi spasi di sini
+    // supaya SATU poin logis selalu tersimpan sebagai SATU baris di sel
+    // Sheets, apa pun sumber newline-nya.
     var uraian = Array.prototype.slice.call(document.querySelectorAll('.uraian-poin'))
-      .map(function (el) { return el.value.trim(); })
+      .map(function (el) { return el.value.replace(/\s*\n+\s*/g, ' ').trim(); })
       .filter(Boolean);
 
     if (!tanggal || !jamMulai || !jamSelesai || !namaAktivitas || uraian.length === 0) {
