@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head><base target="_top"><?!= include('AdminShared'); ?>
+<style>
+/* Halaman ini cuma pakai kelas admin-shell/panel/filter-bar/data-table dst
+   dari AdminShared.html — tidak ada gaya tambahan khusus halaman ini. */
+</style>
+</head>
+<body>
+
+<div class="admin-shell">
+
+  <div class="admin-page-head">
+    <div>
+      <span class="eyebrow">Arsip · Baca saja</span>
+      <h1 class="font-display">Kelola Laporan</h1>
+      <p class="desc">Arsip laporan aktivitas berstatus Final. Halaman ini hanya menampilkan data — isi laporan tidak dapat diubah dari panel admin.</p>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter-field">
+      <label for="filterTanggalMulai">Dari tanggal</label>
+      <input class="input" type="date" id="filterTanggalMulai">
+    </div>
+    <div class="filter-field">
+      <label for="filterTanggalAkhir">Sampai tanggal</label>
+      <input class="input" type="date" id="filterTanggalAkhir">
+    </div>
+    <div class="filter-field">
+      <label for="filterNip">NIP Pegawai</label>
+      <input class="input tabular" type="text" id="filterNip" placeholder="Cari berdasarkan NIP...">
+    </div>
+    <button class="btn btn-secondary" type="button" id="btnTerapkanFilter">Terapkan Filter</button>
+  </div>
+
+  <div class="card panel">
+    <div class="panel-head">
+      <h2>Arsip Laporan</h2>
+      <span class="count" id="arsipCount">-</span>
+    </div>
+    <div class="panel-body table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Nama</th><th>Tanggal</th><th>Jam</th><th>Durasi</th><th></th></tr>
+        </thead>
+        <tbody id="arsipBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  var IKON_LIHAT_PDF = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7Z" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/></svg>';
+
+  var BULAN_INDO = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+  // Format 'YYYY-MM-DD' -> "22 Agu 2026". Parse manual (split '-'), bukan
+  // `new Date(isoString)`, supaya tidak kena kuirk timezone (lihat catatan
+  // toISODate_ di DashboardService.js). Input aneh/kosong dikembalikan apa
+  // adanya, tidak bikin crash.
+  function formatTanggalIndo(tanggalIso) {
+    var parts = String(tanggalIso || '').split('-');
+    if (parts.length !== 3) return String(tanggalIso || '');
+    var tahun = parts[0];
+    var bulan = parseInt(parts[1], 10);
+    var hari = parseInt(parts[2], 10);
+    if (!bulan || !hari || bulan < 1 || bulan > 12) return String(tanggalIso || '');
+    return hari + ' ' + BULAN_INDO[bulan - 1] + ' ' + tahun;
+  }
+
+  // Endpoint listLaporanArsip cuma punya jamMulai/jamSelesai ('HH:MM'), tidak
+  // ada durasiMenit siap pakai seperti di AktivitasService.js — dihitung di
+  // sini, lalu diformat pakai formatDuration() (port verbatim, sama dengan
+  // AdminDashboard.html) supaya tampilan durasi konsisten di seluruh app.
+  function hitungDurasiMenit(jamMulai, jamSelesai) {
+    function keMenit(hhmm) {
+      var p = String(hhmm).split(':');
+      return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
+    }
+    return keMenit(jamSelesai) - keMenit(jamMulai);
+  }
+
+  function formatDuration(totalMinutes) {
+    var jam = Math.floor(totalMinutes / 60);
+    var menit = totalMinutes % 60;
+    var parts = [];
+    if (jam > 0) parts.push(jam + ' Jam');
+    if (menit > 0 || jam === 0) parts.push(menit + ' Menit');
+    return parts.join(' ') + ' (' + totalMinutes + ' Menit)';
+  }
+
+  // Baca 3 field filter jadi objek sesuai kontrak listLaporanArsip — field
+  // kosong/kosongkan sepenuhnya (bukan dikirim string kosong), cermin dari
+  // cek `filter.nip ?` / `filter.tanggalMulai &&` di server.
+  function bacaFilter() {
+    var filter = {};
+    var nip = document.getElementById('filterNip').value.trim();
+    var mulai = document.getElementById('filterTanggalMulai').value;
+    var akhir = document.getElementById('filterTanggalAkhir').value;
+    if (nip) filter.nip = nip;
+    if (mulai) filter.tanggalMulai = mulai;
+    if (akhir) filter.tanggalAkhir = akhir;
+    return filter;
+  }
+
+  function muatArsip() {
+    document.getElementById('arsipBody').innerHTML =
+      '<tr><td colspan="5" style="color:var(--ink-faint);">Memuat data arsip...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(function (result) {
+        if (!result.success) {
+          if (!handleSessionExpiry(result.message, '?page=admin-login')) {
+            tampilkanErrorTabel(result.message);
+          }
+          return;
+        }
+        // listLaporanArsip mengembalikan laporan SEMUA status (Draft & Final)
+        // — server tidak punya filter.status. Halaman ini cuma arsip laporan
+        // Final, jadi disaring di sini sebelum dirender.
+        var dataFinal = (result.data || []).filter(function (l) { return l.status === 'Final'; });
+        renderArsip(dataFinal);
+      })
+      .withFailureHandler(function (error) {
+        tampilkanErrorTabel('Gagal memuat arsip laporan: ' + error.message);
+      })
+      .listLaporanArsip(getToken(), bacaFilter());
+  }
+
+  function tampilkanErrorTabel(message) {
+    document.getElementById('arsipCount').textContent = '-';
+    document.getElementById('arsipBody').innerHTML =
+      '<tr><td colspan="5" style="color:var(--danger);">' + escapeHtml(message) + '</td></tr>';
+  }
+
+  function renderArsip(data) {
+    document.getElementById('arsipCount').textContent = data.length + ' laporan';
+
+    var bodyEl = document.getElementById('arsipBody');
+    if (data.length === 0) {
+      bodyEl.innerHTML = '<tr><td colspan="5" style="color:var(--ink-faint);">Tidak ada laporan final yang cocok dengan filter ini.</td></tr>';
+      return;
+    }
+
+    bodyEl.innerHTML = data.map(function (l) {
+      var durasiMenit = hitungDurasiMenit(l.jamMulai, l.jamSelesai);
+      var link = l.linkPdf ? escapeHtml(l.linkPdf) : '';
+      var tombolPdf = link
+        ? '<button type="button" class="icon-action" title="Lihat PDF" data-action="lihat-pdf" data-link="' + link + '">' + IKON_LIHAT_PDF + '</button>'
+        : '<span style="color:var(--ink-faint);font-size:12px;">Tidak ada PDF</span>';
+
+      return '<tr>' +
+        '<td><div class="cell-name">' +
+          '<div class="cell-avatar">' + escapeHtml(initials(l.nama)) + '</div>' +
+          '<div class="cell-name-text"><div class="n1">' + escapeHtml(l.nama) + '</div><div class="n2">' + escapeHtml(l.nip) + '</div></div>' +
+        '</div></td>' +
+        '<td class="tabular" style="white-space:nowrap;">' + escapeHtml(formatTanggalIndo(l.tanggal)) + '</td>' +
+        '<td class="tabular" style="white-space:nowrap;">' + escapeHtml(l.jamMulai) + ' - ' + escapeHtml(l.jamSelesai) + '</td>' +
+        '<td class="tabular">' + escapeHtml(formatDuration(durasiMenit)) + '</td>' +
+        '<td><div class="row-actions">' + tombolPdf + '</div></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  document.getElementById('arsipBody').addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('button[data-action="lihat-pdf"]');
+    if (!btn) return;
+    var link = btn.getAttribute('data-link');
+    if (link) window.open(link, '_blank');
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    renderAdminNav('admin/laporan');
+
+    document.getElementById('filterTanggalMulai').addEventListener('change', muatArsip);
+    document.getElementById('filterTanggalAkhir').addEventListener('change', muatArsip);
+    document.getElementById('filterNip').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') muatArsip();
+    });
+    document.getElementById('btnTerapkanFilter').addEventListener('click', muatArsip);
+
+    muatArsip();
+  });
+</script>
+</body>
+</html>
