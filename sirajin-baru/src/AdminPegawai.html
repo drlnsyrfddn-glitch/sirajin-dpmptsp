@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head><base target="_top"><?!= include('AdminShared'); ?>
+<style>
+/* Halaman ini cuma pakai kelas admin-shell/panel/data-table/modal dst dari
+   AdminShared.html — tidak ada gaya tambahan khusus halaman ini. */
+</style>
+</head>
+<body>
+
+<div class="admin-shell">
+
+  <div class="admin-page-head">
+    <div>
+      <span class="eyebrow">Data Induk</span>
+      <h1 class="font-display">Kelola Pegawai</h1>
+      <p class="desc">Data pegawai DPMPTSP yang berhak mengakses SiRajin Morowali.</p>
+    </div>
+    <button class="btn btn-primary" onclick="bukaModalTambah()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+      Tambah Pegawai
+    </button>
+  </div>
+
+  <div class="card panel">
+    <div class="panel-head">
+      <h2>Daftar Pegawai</h2>
+      <span class="count" id="pegawaiCount">-</span>
+    </div>
+    <div class="panel-body table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr><th>Nama</th><th>NIP</th><th>Jabatan</th><th>Unit Kerja</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody id="pegawaiBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="modalPegawai">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 class="font-display" id="modalPegawaiTitle">Tambah Pegawai</h3>
+      <button class="modal-close" onclick="closeModal('modalPegawai')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label for="pNama">Nama lengkap</label><input class="input" type="text" id="pNama" placeholder="Nama pegawai"></div>
+      <div class="field"><label for="pNip">NIP</label><input class="input tabular" type="text" id="pNip" placeholder="18 digit NIP"></div>
+      <div class="field"><label for="pJabatan">Jabatan</label><input class="input" type="text" id="pJabatan" placeholder="Contoh: Staf"></div>
+      <div class="field" style="margin-bottom:0;"><label for="pUnit">Unit Kerja</label><input class="input" type="text" id="pUnit" placeholder="Contoh: Bidang Pelayanan Perizinan"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modalPegawai')">Batal</button>
+      <button class="btn btn-primary" id="btnSimpanPegawai" onclick="simpanPegawai()">Simpan Pegawai</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var IKON_EDIT = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 20h4L18.5 9.5a2 2 0 0 0 0-2.8L17.3 5.5a2 2 0 0 0-2.8 0L4 16v4Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+  var IKON_TOGGLE = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 3v9M6.2 6.2a8 8 0 1 0 11.6 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+
+  // id pegawai yang lagi diedit di modal; null berarti mode tambah baru.
+  var pegawaiEditId = null;
+  // Cache hasil listPegawai() terakhir, dipakai buat isi ulang modal edit
+  // dan tentukan status lawan (Aktif <-> Nonaktif) tanpa round-trip ke server.
+  var daftarPegawaiCache = [];
+
+  function muatPegawai() {
+    document.getElementById('pegawaiBody').innerHTML =
+      '<tr><td colspan="6" style="color:var(--ink-faint);">Memuat data pegawai...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(function (result) {
+        if (!result.success) {
+          if (!handleSessionExpiry(result.message, '?page=admin-login')) {
+            tampilkanErrorTabel(result.message);
+          }
+          return;
+        }
+        daftarPegawaiCache = result.data || [];
+        renderPegawai(daftarPegawaiCache);
+      })
+      .withFailureHandler(function (error) {
+        tampilkanErrorTabel('Gagal memuat data pegawai: ' + error.message);
+      })
+      .listPegawai(getToken());
+  }
+
+  function tampilkanErrorTabel(message) {
+    document.getElementById('pegawaiCount').textContent = '-';
+    document.getElementById('pegawaiBody').innerHTML =
+      '<tr><td colspan="6" style="color:var(--danger);">' + escapeHtml(message) + '</td></tr>';
+  }
+
+  function renderPegawai(data) {
+    document.getElementById('pegawaiCount').textContent = data.length + ' pegawai';
+
+    var bodyEl = document.getElementById('pegawaiBody');
+    if (data.length === 0) {
+      bodyEl.innerHTML = '<tr><td colspan="6" style="color:var(--ink-faint);">Belum ada data pegawai.</td></tr>';
+      return;
+    }
+
+    bodyEl.innerHTML = data.map(function (p) {
+      var aktif = p.status === 'Aktif';
+      var badgeClass = aktif ? 'badge-aktif' : 'badge-nonaktif';
+      var toggleLabel = aktif ? 'Nonaktifkan' : 'Aktifkan';
+      var idAman = escapeHtml(p.id);
+      return '<tr>' +
+        '<td><div class="cell-name">' +
+          '<div class="cell-avatar">' + escapeHtml(initials(p.namaLengkap)) + '</div>' +
+          '<div class="cell-name-text"><div class="n1">' + escapeHtml(p.namaLengkap) + '</div></div>' +
+        '</div></td>' +
+        '<td class="tabular">' + escapeHtml(p.nip) + '</td>' +
+        '<td>' + escapeHtml(p.jabatan) + '</td>' +
+        '<td>' + escapeHtml(p.unitKerja) + '</td>' +
+        '<td><span class="badge ' + badgeClass + '">' + escapeHtml(p.status) + '</span></td>' +
+        '<td><div class="row-actions">' +
+          '<button type="button" class="icon-action" title="Edit" data-action="edit" data-id="' + idAman + '">' + IKON_EDIT + '</button>' +
+          '<button type="button" class="icon-action danger" title="' + toggleLabel + '" data-action="toggle" data-id="' + idAman + '">' + IKON_TOGGLE + '</button>' +
+        '</div></td>' +
+      '</tr>';
+    }).join('');
+  }
+
+  function cariPegawai(id) {
+    for (var i = 0; i < daftarPegawaiCache.length; i++) {
+      if (String(daftarPegawaiCache[i].id) === String(id)) return daftarPegawaiCache[i];
+    }
+    return null;
+  }
+
+  function bukaModalTambah() {
+    pegawaiEditId = null;
+    document.getElementById('modalPegawaiTitle').textContent = 'Tambah Pegawai';
+    document.getElementById('pNama').value = '';
+    document.getElementById('pNip').value = '';
+    document.getElementById('pJabatan').value = '';
+    document.getElementById('pUnit').value = '';
+    openModal('modalPegawai');
+  }
+
+  function bukaModalEdit(id) {
+    var p = cariPegawai(id);
+    if (!p) return;
+    pegawaiEditId = p.id;
+    document.getElementById('modalPegawaiTitle').textContent = 'Edit Pegawai';
+    document.getElementById('pNama').value = p.namaLengkap;
+    document.getElementById('pNip').value = p.nip;
+    document.getElementById('pJabatan').value = p.jabatan;
+    document.getElementById('pUnit').value = p.unitKerja;
+    openModal('modalPegawai');
+  }
+
+  function simpanPegawai() {
+    var nama = document.getElementById('pNama').value.trim();
+    var nip = document.getElementById('pNip').value.trim();
+    var jabatan = document.getElementById('pJabatan').value.trim();
+    var unit = document.getElementById('pUnit').value.trim();
+
+    // Validasi ringan di sisi klien — cermin dari cek savePegawai() di
+    // PegawaiService.js, tapi server tetap satu-satunya sumber kebenaran
+    // (format NIP 18 digit & duplikasi NIP cuma dicek di server).
+    if (!nip) { showToast('NIP wajib diisi.', true); return; }
+    if (!nama || !jabatan || !unit) { showToast('Nama, jabatan, dan unit kerja wajib diisi.', true); return; }
+
+    var data = { id: pegawaiEditId, nip: nip, namaLengkap: nama, jabatan: jabatan, unitKerja: unit };
+    var btn = document.getElementById('btnSimpanPegawai');
+    btn.disabled = true;
+
+    google.script.run
+      .withSuccessHandler(function (result) {
+        btn.disabled = false;
+        if (!result.success) {
+          if (!handleSessionExpiry(result.message, '?page=admin-login')) {
+            showToast(result.message, true);
+          }
+          return;
+        }
+        closeModal('modalPegawai');
+        showToast('Data pegawai berhasil disimpan.');
+        muatPegawai();
+      })
+      .withFailureHandler(function (error) {
+        btn.disabled = false;
+        showToast('Gagal menyimpan data pegawai: ' + error.message, true);
+      })
+      .savePegawai(getToken(), data);
+  }
+
+  function toggleStatusPegawai(id) {
+    var p = cariPegawai(id);
+    if (!p) return;
+    var statusBaru = p.status === 'Aktif' ? 'Nonaktif' : 'Aktif';
+    if (!confirm('Ubah status ' + p.namaLengkap + ' menjadi ' + statusBaru + '?')) return;
+
+    google.script.run
+      .withSuccessHandler(function (result) {
+        if (!result.success) {
+          if (!handleSessionExpiry(result.message, '?page=admin-login')) {
+            showToast(result.message, true);
+          }
+          return;
+        }
+        showToast('Status pegawai berhasil diubah.');
+        muatPegawai();
+      })
+      .withFailureHandler(function (error) {
+        showToast('Gagal mengubah status pegawai: ' + error.message, true);
+      })
+      .setPegawaiStatus(getToken(), id, statusBaru);
+  }
+
+  document.getElementById('pegawaiBody').addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('button[data-action]');
+    if (!btn) return;
+    var id = btn.getAttribute('data-id');
+    var action = btn.getAttribute('data-action');
+    if (action === 'edit') bukaModalEdit(id);
+    else if (action === 'toggle') toggleStatusPegawai(id);
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    renderAdminNav('admin/pegawai');
+    muatPegawai();
+  });
+</script>
+</body>
+</html>
