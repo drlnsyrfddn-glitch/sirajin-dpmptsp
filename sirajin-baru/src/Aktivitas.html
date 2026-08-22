@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+<head><base target="_top"><?!= include('Shared'); ?>
+<style>
+html{scrollbar-gutter: stable both-edges;}
+
+.app-shell{
+  max-width:560px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative;
+  padding-bottom:110px;
+}
+.app-header{
+  position:sticky;top:0;z-index:20;
+  background:var(--primary);color:#F5F1E5;
+  padding:var(--space-5) var(--space-5) var(--space-6);
+  border-radius:0 0 20px 20px;
+  box-shadow:var(--shadow-md);
+}
+.app-brand-row{margin-bottom:var(--space-4);}
+.app-brand{display:flex;align-items:center;gap:8px;}
+.app-brand-mark{
+  width:22px;height:22px;border-radius:50%;background:#FBF8F1;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;padding:2.5px;
+}
+.app-brand span{font-size:11px;font-weight:600;letter-spacing:.03em;color:#BFD1C7;text-transform:uppercase;}
+.app-header-row{display:flex;align-items:center;justify-content:space-between;}
+.app-header .who{display:flex;align-items:center;gap:10px;min-width:0;}
+.avatar{
+  width:38px;height:38px;border-radius:50%;background:var(--gold);color:#3A2C10;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;font-size:15px;
+}
+.who-text{min-width:0;}
+.who-text .name{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.who-text .role{font-size:11px;color:#BFD1C7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.icon-btn{
+  width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.14);cursor:pointer;
+}
+.icon-btn:hover{background:rgba(255,255,255,.16);}
+.app-header h1{color:#FBF8F1;font-size:23px;margin-top:var(--space-5);}
+.app-header .sub{color:#BFD1C7;font-size:12.5px;margin-top:4px;}
+
+.date-scroller{
+  display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;margin-top:var(--space-5);
+  scrollbar-width:none;
+}
+.date-scroller::-webkit-scrollbar{display:none;}
+.date-chip{
+  flex-shrink:0;padding:9px 14px;border-radius:var(--radius-pill);background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.14);color:#E7EFE9;font-size:12.5px;text-align:center;min-width:52px;
+  cursor:pointer;transition:background .12s ease,border-color .12s ease;font-family:var(--font-ui);
+}
+.date-chip:hover{background:rgba(255,255,255,.14);}
+.date-chip .dow{display:block;font-size:9.5px;opacity:.75;text-transform:uppercase;letter-spacing:.05em;}
+.date-chip .dnum{display:block;font-family:var(--font-display);font-weight:700;font-size:15px;margin-top:2px;}
+.date-chip.active{background:var(--gold);color:#3A2C10;border-color:var(--gold);}
+
+.container{padding:0 var(--space-5) var(--space-5);}
+
+.summary-strip{
+  display:flex;justify-content:space-between;background:var(--surface);border:1px solid var(--border-soft);
+  border-radius:var(--radius-md);padding:var(--space-4) var(--space-5);margin-top:var(--space-6);
+  box-shadow:var(--shadow-sm);
+}
+.summary-item{text-align:center;flex:1;}
+.summary-item + .summary-item{border-left:1px solid var(--border-soft);}
+.summary-item b{display:block;font-family:var(--font-display);font-size:19px;}
+.summary-item span{font-size:11px;color:var(--ink-faint);}
+
+.section-label{margin:var(--space-6) 0 var(--space-3);}
+.section-label h2{font-size:14px;color:var(--ink-soft);font-family:var(--font-ui);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin:0;}
+
+.timeline{position:relative;}
+.timeline::before{
+  content:"";position:absolute;left:19px;top:10px;bottom:10px;width:1.5px;
+  background:repeating-linear-gradient(to bottom, var(--border) 0 5px, transparent 5px 9px);
+}
+.activity-item{position:relative;padding-left:46px;margin-bottom:var(--space-4);}
+.activity-dot{
+  position:absolute;left:12px;top:20px;width:15px;height:15px;border-radius:50%;
+  background:var(--surface);border:2.5px solid var(--primary);
+}
+.activity-item.is-draft .activity-dot{border-color:var(--warning);}
+.activity-item.is-final .activity-dot{border-color:var(--success);background:var(--success);}
+
+.act-card{padding:var(--space-4) var(--space-5);}
+.act-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+.act-time{font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--primary);}
+.act-name{font-size:14.5px;font-weight:600;margin-top:4px;line-height:1.4;}
+.act-durasi{font-size:12px;color:var(--ink-faint);margin-top:3px;}
+
+.act-uraian{margin:var(--space-3) 0 0;padding-left:18px;font-size:13px;color:var(--ink-soft);line-height:1.5;}
+.act-uraian li{margin-bottom:2px;}
+
+.act-photos{display:flex;gap:8px;margin-top:var(--space-3);flex-wrap:wrap;}
+.act-photos a{display:block;width:56px;height:56px;border-radius:8px;overflow:hidden;border:1px solid var(--border-soft);flex-shrink:0;}
+.act-photos img{width:100%;height:100%;object-fit:cover;display:block;}
+
+.act-actions{
+  display:flex;gap:14px;margin-top:var(--space-4);padding-top:var(--space-3);
+  border-top:1px solid var(--border-soft);flex-wrap:wrap;
+}
+.act-actions a, .act-actions button{
+  font-size:12.5px;font-weight:600;color:var(--ink-soft);display:flex;align-items:center;gap:5px;
+  background:none;border:none;padding:0;cursor:pointer;font-family:var(--font-ui);
+}
+.act-actions a:hover, .act-actions button:hover{color:var(--primary);}
+.act-actions .danger{color:var(--danger);}
+.act-actions .finalisasi{color:var(--gold-text);}
+
+.empty-hint{
+  text-align:center;padding:var(--space-8) var(--space-4);color:var(--ink-faint);font-size:13px;
+}
+
+.fab-wrap{
+  position:fixed;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;
+  padding:var(--space-4) var(--space-5) calc(var(--space-4) + env(safe-area-inset-bottom));
+  background:linear-gradient(to top, var(--bg) 60%, transparent);
+  display:flex;justify-content:center;z-index:30;
+}
+.fab-wrap .btn{box-shadow:var(--shadow-md);}
+
+@media (min-width:640px){
+  body{background:var(--surface-alt);}
+  .app-shell{box-shadow:0 0 0 1px var(--border-soft), var(--shadow-lg);}
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+<div class="app-header">
+  <div class="app-brand-row">
+    <div class="app-brand">
+      <div class="app-brand-mark">
+        <img class="lambang-logo" alt="Lambang Kabupaten Morowali">
+        <script>document.currentScript.previousElementSibling.src = SIRAJIN_LOGO_SRC;</script>
+      </div>
+      <span>DPMPTSP &middot; SiRajin Morowali</span>
+    </div>
+  </div>
+  <div class="app-header-row">
+    <div class="who">
+      <div class="avatar" id="appAvatar">--</div>
+      <div class="who-text">
+        <div class="name" id="appHeaderName">Memuat&hellip;</div>
+        <div class="role" id="appHeaderRole">&nbsp;</div>
+      </div>
+    </div>
+    <button type="button" class="icon-btn" id="btnKeluar" title="Keluar" aria-label="Keluar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="#F5F1E5" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+  <h1 class="font-display">Aktivitas Saya</h1>
+  <p class="sub">Rekap aktivitas &amp; bukti dukung kinerja harian Anda.</p>
+
+  <div class="date-scroller" id="dateScroller"></div>
+</div>
+
+<div class="container">
+
+  <div class="summary-strip">
+    <div class="summary-item"><b class="tabular" id="sumCount">0</b><span>Aktivitas</span></div>
+    <div class="summary-item"><b class="tabular" id="sumDurasi">0m</b><span>Jam tercatat</span></div>
+    <div class="summary-item"><b class="tabular" id="sumBelumFinal">0</b><span>Belum final</span></div>
+  </div>
+
+  <div class="section-label"><h2 id="sectionDateLabel">&nbsp;</h2></div>
+
+  <div id="timelineContainer" class="timeline"><p class="loading">Memuat...</p></div>
+
+</div>
+
+<div class="fab-wrap">
+  <a href="?page=aktivitas/tambah" class="btn btn-primary btn-block btn-lg">+ Tambah Aktivitas</a>
+</div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ---------- Step 1: Guard sesi ----------
+  if (!getToken()) {
+    redirectTop('?page=login');
+    return;
+  }
+
+  // NOTE: Shared.html (halaman pegawai) TIDAK menyediakan escapeHtml() —
+  // hanya AdminShared.html yang punya. Karena scope task ini cuma boleh
+  // membuat Aktivitas.html (tidak boleh mengubah Shared.html), definisikan
+  // versi lokal yang identik dengan AdminShared.html supaya perilakunya
+  // konsisten di seluruh aplikasi. Wajib ada: halaman ini merender
+  // namaAktivitas & uraian (teks bebas ketikan pegawai) ke innerHTML.
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  var DOW_FULL = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+  var DOW_SHORT = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  var MONTH_FULL = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+  var todayRef = stripTime(new Date());
+  var selectedDate = todayRef;
+
+  function stripTime(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function toIso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function sameDay(a, b) {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+  function formatLabel(d) {
+    return DOW_FULL[d.getDay()] + ', ' + d.getDate() + ' ' + MONTH_FULL[d.getMonth()] + ' ' + d.getFullYear();
+  }
+
+  // Port verbatim dari src/Utils.js (server, GAS-independent) supaya format
+  // durasi identik di seluruh aplikasi — belum ada versi client sebelum ini.
+  function formatDuration(totalMinutes) {
+    var jam = Math.floor(totalMinutes / 60);
+    var menit = totalMinutes % 60;
+    var parts = [];
+    if (jam > 0) parts.push(jam + ' Jam');
+    if (menit > 0 || jam === 0) parts.push(menit + ' Menit');
+    return parts.join(' ') + ' (' + totalMinutes + ' Menit)';
+  }
+
+  // Format singkat khusus strip ringkasan (mis. "6j 30m") — beda dari
+  // formatDuration() di atas yang formatnya baku dipakai per-item & PDF.
+  function formatDurasiSingkat(totalMenit) {
+    var jam = Math.floor(totalMenit / 60);
+    var menit = totalMenit % 60;
+    if (jam > 0 && menit > 0) return jam + 'j ' + menit + 'm';
+    if (jam > 0) return jam + 'j';
+    return menit + 'm';
+  }
+
+  // linkFoto berisi URL halaman-view Drive (file.getUrl()), bukan URL gambar
+  // langsung — tidak bisa dipakai apa adanya sebagai src <img>. Ekstrak ID
+  // file (pola sama seperti extractDriveFileId_ di server) dan pakai endpoint
+  // thumbnail Drive supaya benar-benar tampil sebagai gambar. Kalau gagal
+  // (mis. izin berkas), <img onerror> di bawah menyembunyikannya dengan aman.
+  function driveThumbnailUrl(url) {
+    var match = String(url).match(/\/d\/([^\/]+)/);
+    if (!match) return url;
+    return 'https://drive.google.com/thumbnail?id=' + match[1] + '&sz=w200-h200';
+  }
+
+  function initials(nama) {
+    if (!nama) return '--';
+    var parts = String(nama).trim().split(/\s+/);
+    var first = parts[0] ? parts[0].charAt(0) : '';
+    var second = parts.length > 1 ? parts[1].charAt(0) : '';
+    return (first + second).toUpperCase() || '--';
+  }
+
+  // ---------- Header sesi ----------
+  function loadSession() {
+    google.script.run
+      .withSuccessHandler(function (result) {
+        if (result.success) {
+          var s = result.session;
+          document.getElementById('appAvatar').textContent = initials(s.nama);
+          document.getElementById('appHeaderName').textContent = s.nama;
+          document.getElementById('appHeaderRole').textContent = s.jabatan;
+        } else if (!handleSessionExpiry(result.message)) {
+          showToast(result.message, true);
+        }
+      })
+      .withFailureHandler(function (error) {
+        showToast('Gagal memuat sesi: ' + error.message, true);
+      })
+      .getMySession(getToken());
+  }
+
+  // ---------- Step 2: Date-scroller ----------
+  function renderDateScroller() {
+    var scroller = document.getElementById('dateScroller');
+    scroller.innerHTML = '';
+    // 7 hari terakhir s.d hari ini (hari ini selalu jadi chip paling kanan).
+    for (var offset = -6; offset <= 0; offset++) {
+      var d = new Date(todayRef);
+      d.setDate(todayRef.getDate() + offset);
+
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'date-chip' + (sameDay(d, selectedDate) ? ' active' : '');
+
+      var dow = document.createElement('span');
+      dow.className = 'dow';
+      dow.textContent = DOW_SHORT[d.getDay()];
+
+      var dnum = document.createElement('span');
+      dnum.className = 'dnum';
+      dnum.textContent = d.getDate();
+
+      chip.appendChild(dow);
+      chip.appendChild(dnum);
+      chip.addEventListener('click', (function (clickedDate) {
+        return function () { setSelectedDate(clickedDate); };
+      })(d));
+
+      scroller.appendChild(chip);
+    }
+  }
+
+  function setSelectedDate(d) {
+    selectedDate = stripTime(d);
+    document.getElementById('sectionDateLabel').textContent = formatLabel(selectedDate);
+    renderDateScroller();
+    muatLaporan();
+  }
+
+  // ---------- Strip ringkasan ----------
+  function renderSummary(list) {
+    var totalMenit = 0;
+    var belumFinal = 0;
+    for (var i = 0; i < list.length; i++) {
+      totalMenit += Number(list[i].durasiMenit) || 0;
+      if (list[i].status === 'Draft') belumFinal++;
+    }
+    document.getElementById('sumCount').textContent = list.length;
+    document.getElementById('sumDurasi').textContent = formatDurasiSingkat(totalMenit);
+    document.getElementById('sumBelumFinal').textContent = belumFinal;
+  }
+
+  // ---------- Step 3: Render daftar ----------
+  function renderItem(item) {
+    var isDraft = item.status === 'Draft';
+    var badgeClass = isDraft ? 'badge-draft' : 'badge-final';
+    var badgeLabel = isDraft ? 'Draft' : 'Tersimpan';
+    var dotClass = isDraft ? 'is-draft' : 'is-final';
+
+    var actions = '<a href="' + escapeHtml(item.linkPdf || '#') + '" target="_blank" rel="noopener">Lihat PDF</a>';
+    if (isDraft) {
+      actions +=
+        '<a href="?page=aktivitas/tambah&id=' + encodeURIComponent(item.idLaporan) + '">Edit</a>' +
+        '<button type="button" class="finalisasi" data-action="finalisasi" data-id="' + escapeHtml(item.idLaporan) + '">Finalisasi</button>' +
+        '<button type="button" class="danger" data-action="hapus" data-id="' + escapeHtml(item.idLaporan) + '">Hapus</button>';
+    }
+
+    var uraianHtml = '';
+    if (item.uraian && item.uraian.length) {
+      var poin = item.uraian.filter(function (line) { return line; });
+      if (poin.length) {
+        uraianHtml = '<ul class="act-uraian">' +
+          poin.map(function (line) { return '<li>' + escapeHtml(line) + '</li>'; }).join('') +
+          '</ul>';
+      }
+    }
+
+    var fotoHtml = '';
+    if (item.linkFoto && item.linkFoto.length) {
+      fotoHtml = '<div class="act-photos">' +
+        item.linkFoto.map(function (url) {
+          return '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener">' +
+            '<img src="' + escapeHtml(driveThumbnailUrl(url)) + '" alt="Foto bukti dukung" onerror="this.style.visibility=\'hidden\'">' +
+            '</a>';
+        }).join('') +
+        '</div>';
+    }
+
+    return (
+      '<div class="activity-item ' + dotClass + '">' +
+        '<div class="activity-dot"></div>' +
+        '<div class="card act-card">' +
+          '<div class="act-card-top">' +
+            '<div>' +
+              '<div class="act-time tabular">' + escapeHtml(item.jamMulai) + ' &ndash; ' + escapeHtml(item.jamSelesai) + '</div>' +
+              '<div class="act-name">' + escapeHtml(item.namaAktivitas) + '</div>' +
+              '<div class="act-durasi tabular">' + formatDuration(Number(item.durasiMenit) || 0) + '</div>' +
+            '</div>' +
+            '<span class="badge ' + badgeClass + '">' + badgeLabel + '</span>' +
+          '</div>' +
+          uraianHtml +
+          fotoHtml +
+          '<div class="act-actions">' + actions + '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderLaporan(list) {
+    renderSummary(list);
+    var container = document.getElementById('timelineContainer');
+    if (!list || list.length === 0) {
+      container.innerHTML =
+        '<div class="empty-hint">' +
+          '<p>Belum ada aktivitas yang dicatat untuk tanggal ini.</p>' +
+          '<a href="?page=aktivitas/tambah" class="btn btn-primary btn-sm" style="margin-top:12px;">+ Tambah Aktivitas</a>' +
+        '</div>';
+      return;
+    }
+    container.innerHTML = list.map(renderItem).join('');
+  }
+
+  function muatLaporan() {
+    var container = document.getElementById('timelineContainer');
+    container.innerHTML = '<p class="loading">Memuat...</p>';
+    google.script.run
+      .withSuccessHandler(function (result) {
+        if (result.success) {
+          renderLaporan(result.data);
+        } else if (!handleSessionExpiry(result.message)) {
+          container.innerHTML = '<p class="error-message">' + escapeHtml(result.message) + '</p>';
+        }
+      })
+      .withFailureHandler(function (error) {
+        container.innerHTML = '<p class="error-message">Gagal memuat aktivitas: ' + escapeHtml(error.message) + '</p>';
+      })
+      .listAktivitasByDate(getToken(), toIso(selectedDate));
+  }
+
+  // ---------- Aksi per-item: Hapus & Finalisasi ----------
+  function hapusLaporan(id) {
+    if (!confirm('Yakin ingin menghapus aktivitas ini? Tindakan ini tidak bisa dibatalkan.')) return;
+    google.script.run
+      .withSuccessHandler(function (result) {
+        if (result.success) {
+          showToast('Aktivitas berhasil dihapus.');
+          muatLaporan();
+        } else if (!handleSessionExpiry(result.message)) {
+          showToast(result.message, true);
+        }
+      })
+      .withFailureHandler(function (error) {
+        showToast('Gagal menghapus aktivitas: ' + error.message, true);
+      })
+      .deleteAktivitas(getToken(), id);
+  }
+
+  function finalisasiLaporan(id) {
+    if (!confirm('Setelah difinalisasi, laporan tidak bisa diedit atau dihapus. Lanjutkan?')) return;
+    google.script.run
+      .withSuccessHandler(function (result) {
+        if (result.success) {
+          showToast('Aktivitas berhasil difinalisasi.');
+          muatLaporan();
+        } else if (!handleSessionExpiry(result.message)) {
+          showToast(result.message, true);
+        }
+      })
+      .withFailureHandler(function (error) {
+        showToast('Gagal finalisasi: ' + error.message, true);
+      })
+      .finalizeAktivitas(getToken(), id);
+  }
+
+  document.getElementById('timelineContainer').addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('button[data-action]');
+    if (!btn) return;
+    var id = btn.getAttribute('data-id');
+    var action = btn.getAttribute('data-action');
+    if (action === 'hapus') hapusLaporan(id);
+    else if (action === 'finalisasi') finalisasiLaporan(id);
+  });
+
+  // ---------- Step 4: Tombol Keluar ----------
+  document.getElementById('btnKeluar').addEventListener('click', function () {
+    clearToken();
+    redirectTop('?page=login');
+  });
+
+  // ---------- Init ----------
+  document.getElementById('sectionDateLabel').textContent = formatLabel(selectedDate);
+  renderDateScroller();
+  loadSession();
+  muatLaporan();
+})();
+</script>
+</body>
+</html>
