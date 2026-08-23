@@ -521,7 +521,20 @@ body{padding-bottom:110px;}
             btn.disabled = false;
             btn.textContent = 'Simpan Aktivitas';
             if (result.success) {
-              redirectTop('?page=aktivitas', 'Laporan tersimpan');
+              // Bukan redirectTop(pesan) langsung: simpan (upload foto +
+              // generate PDF) sering makan waktu lebih lama dari jendela
+              // aktivasi klik browser, jadi auto-redirect di titik ini sering
+              // diam-diam ditolak sandbox GAS. Dialog ini minta satu klik
+              // eksplisit dulu - aktivasinya masih segar saat itu, jadi
+              // redirect yang dijalankan dari klik ini andal.
+              UIAlert.alert({
+                variant: 'success',
+                title: 'Berhasil!',
+                message: 'Laporan aktivitas Anda berhasil disimpan.',
+                okText: 'Kembali ke Aktivitas Saya'
+              }).then(function () {
+                redirectTop('?page=aktivitas');
+              });
             } else if (!handleSessionExpiry(result.message)) {
               errorEl.textContent = result.message;
               errorEl.style.display = 'block';

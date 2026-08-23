@@ -358,7 +358,7 @@
         sessionStorage.setItem('sirajin_pending_toast', JSON.stringify({ message: pesan, isError: !!isError }));
       } catch (e) { /* storage penuh/diblokir - toast di halaman tujuan cuma gak muncul, gak fatal */ }
     }
-    var timerTampilkan = setTimeout(function () { a.style.visibility = 'visible'; }, 6000);
+    var timerTampilkan = setTimeout(function () { a.style.visibility = 'visible'; }, 15000);
     window.addEventListener('pagehide', function () { clearTimeout(timerTampilkan); });
     a.click();
   }
@@ -429,6 +429,43 @@
       });
     }
 
+    // Varian satu-tombol dari confirmDialog di atas — buat notifikasi hasil
+    // ("Berhasil!"), bukan pertanyaan ya/tidak. Dipakai antara lain menggantikan
+    // pola redirectTop(pesan)-otomatis di alur yang lambat & sering makan waktu
+    // lebih dari jendela aktivasi klik browser (mis. simpan aktivitas: upload
+    // foto + generate PDF) — auto-redirect diam-diam gagal di situ, ditolak
+    // sandbox GAS, dan pengguna nyangkut. Dialog ini justru MINTA satu klik
+    // eksplisit, lalu redirect dijalankan dari klik itu sendiri (aktivasi
+    // browser-nya masih segar saat itu), jadi navigasinya andal.
+    function alertDialog(opts){
+      opts = opts || {};
+      var variant = opts.variant || 'success';
+      return new Promise(function(resolve){
+        var overlay = document.createElement('div');
+        overlay.className = 'ui-overlay';
+        overlay.innerHTML =
+          '<div class="ui-dialog" role="alertdialog" aria-modal="true">' +
+            '<div class="ui-dialog-icon variant-' + variant + '">' + (ICONS[variant] || ICONS.success) + '</div>' +
+            '<h3 class="font-display">' + (opts.title || 'Berhasil') + '</h3>' +
+            '<p>' + (opts.message || '') + '</p>' +
+            '<div class="ui-dialog-actions">' +
+              '<button type="button" class="btn btn-primary" data-act="ok">' + (opts.okText || 'OK') + '</button>' +
+            '</div>' +
+          '</div>';
+
+        document.body.appendChild(overlay);
+        requestAnimationFrame(function(){ overlay.classList.add('open'); });
+
+        function close(){
+          overlay.classList.remove('open');
+          setTimeout(function(){ overlay.remove(); }, 180);
+          resolve();
+        }
+
+        overlay.querySelector('[data-act="ok"]').addEventListener('click', close);
+      });
+    }
+
     // NOTE bawaan bundle: toast() aslinya nyusun pesan langsung ke innerHTML
     // via string concat (gak escape HTML) — risiko nyata karena pesan error
     // server (result.message) lewat jalur ini. Di sini span teksnya dibiarkan
@@ -463,6 +500,7 @@
 
     window.UIAlert = {
       confirm: confirmDialog,
+      alert: alertDialog,
       toast: toastFn,
       success: function(message){ toastFn({type:'success', message: message}); },
       error: function(message){ toastFn({type:'error', message: message}); },
