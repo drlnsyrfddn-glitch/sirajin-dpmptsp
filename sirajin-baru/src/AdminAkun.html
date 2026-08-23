@@ -99,12 +99,12 @@
       .withSuccessHandler(function (result) {
         if (!result.success) {
           if (!handleSessionExpiry(result.message, '?page=admin-login')) {
-            redirectTop('?page=admin-login', 'Sesi tidak valid. Klik di sini untuk login ulang →');
+            redirectTop('?page=admin-login', 'Sesi tidak valid. Klik di sini untuk login ulang →', true);
           }
           return;
         }
         if (result.session.level !== 'SuperAdmin') {
-          redirectTop('?page=admin', 'Halaman khusus SuperAdmin. Klik di sini untuk kembali →');
+          redirectTop('?page=admin', 'Halaman khusus SuperAdmin. Klik di sini untuk kembali →', true);
           return;
         }
         document.getElementById('halamanAkun').style.display = '';
