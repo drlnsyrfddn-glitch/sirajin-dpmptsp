@@ -143,6 +143,33 @@ html{scrollbar-gutter: stable both-edges;}
   body{background:var(--surface-alt);}
   .app-shell{box-shadow:0 0 0 1px var(--border-soft), var(--shadow-lg);}
 }
+
+/* Tombol foto = reset gaya tombol supaya thumbnail tampil bersih seperti
+   sebelumnya (dulu <a>), tapi tetap dapat fokus keyboard & kursor pointer. */
+.act-photo-btn{padding:0;border:0;background:none;cursor:pointer;display:inline-block;line-height:0;}
+
+/* Modal Lihat PDF / Foto — menampilkan bukti dukung DI DALAM aplikasi. */
+.media-modal{
+  position:fixed;inset:0;background:rgba(15,20,17,.82);z-index:500;
+  display:none;align-items:center;justify-content:center;padding:var(--space-4);
+}
+.media-modal.open{display:flex;}
+.media-modal-inner{
+  position:relative;width:100%;max-width:920px;height:90vh;max-height:90vh;
+  display:flex;flex-direction:column;
+}
+.media-modal-close{
+  position:absolute;top:-6px;right:-6px;z-index:2;
+  width:38px;height:38px;border-radius:50%;border:0;cursor:pointer;
+  background:var(--bg);color:var(--ink);box-shadow:var(--shadow-md);
+  display:flex;align-items:center;justify-content:center;
+}
+.media-modal-body{
+  flex:1;min-height:0;display:flex;align-items:center;justify-content:center;
+  border-radius:var(--radius-lg);overflow:hidden;background:#111;
+}
+.media-modal-body .media-frame{width:100%;height:100%;border:0;background:#fff;}
+.media-modal-body .media-img{max-width:100%;max-height:100%;object-fit:contain;display:block;}
 </style>
 </head>
 <body>
@@ -154,7 +181,7 @@ html{scrollbar-gutter: stable both-edges;}
         <img class="lambang-logo" alt="Lambang Kabupaten Morowali">
         <script>document.currentScript.previousElementSibling.src = SIRAJIN_LOGO_SRC;</script>
       </div>
-      <span>DPMPTSP &middot; SiRajin Morowali</span>
+      <span>SiRajin DPMPTSP</span>
     </div>
   </div>
   <div class="app-header-row">
@@ -280,10 +307,25 @@ html{scrollbar-gutter: stable both-edges;}
   // file (pola sama seperti extractDriveFileId_ di server) dan pakai endpoint
   // thumbnail Drive supaya benar-benar tampil sebagai gambar. Kalau gagal
   // (mis. izin berkas), <img onerror> di bawah menyembunyikannya dengan aman.
-  function driveThumbnailUrl(url) {
+  // Ekstrak ID file Drive dari URL view (pola sama seperti server). Dipakai
+  // untuk thumbnail foto, gambar lightbox besar, dan iframe preview PDF —
+  // semua ditampilkan DI DALAM aplikasi supaya pegawai tidak diarahkan ke
+  // Google Drive (yang bisa membuka akses ke berkas/folder lain).
+  function extractDriveId(url) {
     var match = String(url).match(/\/d\/([^\/]+)/);
-    if (!match) return url;
-    return 'https://drive.google.com/thumbnail?id=' + match[1] + '&sz=w200-h200';
+    return match ? match[1] : null;
+  }
+  function driveThumbnailUrl(url, size) {
+    var id = extractDriveId(url);
+    if (!id) return url;
+    return 'https://drive.google.com/thumbnail?id=' + id + '&sz=' + (size || 'w200-h200');
+  }
+  // URL preview PDF Drive dalam mode terisolasi (embed di iframe): pegawai
+  // hanya melihat berkas ini, tidak bisa menjelajah Drive lain.
+  function drivePreviewUrl(url) {
+    var id = extractDriveId(url);
+    if (!id) return url;
+    return 'https://drive.google.com/file/d/' + id + '/preview';
   }
 
   function initials(nama) {
@@ -375,7 +417,9 @@ html{scrollbar-gutter: stable both-edges;}
     var badgeLabel = isDraft ? 'Draft' : 'Tersimpan';
     var dotClass = isDraft ? 'is-draft' : 'is-final';
 
-    var actions = '<a href="' + escapeHtml(item.linkPdf || '#') + '" target="_blank" rel="noopener">Lihat PDF</a>';
+    var actions = item.linkPdf
+      ? '<button type="button" data-action="lihat-pdf" data-url="' + escapeHtml(item.linkPdf) + '">Lihat PDF</button>'
+      : '';
     if (isDraft) {
       actions +=
         '<a href="?page=aktivitas/tambah&id=' + encodeURIComponent(item.idLaporan) + '">Edit</a>' +
@@ -397,9 +441,9 @@ html{scrollbar-gutter: stable both-edges;}
     if (item.linkFoto && item.linkFoto.length) {
       fotoHtml = '<div class="act-photos">' +
         item.linkFoto.map(function (url) {
-          return '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener">' +
-            '<img src="' + escapeHtml(driveThumbnailUrl(url)) + '" alt="Foto bukti dukung" onerror="this.style.visibility=\'hidden\'">' +
-            '</a>';
+          return '<button type="button" class="act-photo-btn" data-action="lihat-foto" data-url="' + escapeHtml(driveThumbnailUrl(url, 'w1600')) + '">' +
+            '<img src="' + escapeHtml(driveThumbnailUrl(url, 'w400')) + '" alt="Foto bukti dukung" onerror="this.style.visibility=\'hidden\'">' +
+            '</button>';
         }).join('') +
         '</div>';
     }
@@ -511,6 +555,8 @@ html{scrollbar-gutter: stable both-edges;}
     var action = btn.getAttribute('data-action');
     if (action === 'hapus') hapusLaporan(id);
     else if (action === 'finalisasi') finalisasiLaporan(id);
+    else if (action === 'lihat-pdf') bukaPdfModal(btn.getAttribute('data-url'));
+    else if (action === 'lihat-foto') bukaFotoModal(btn.getAttribute('data-url'));
   });
 
   // ---------- Step 4: Tombol Keluar ----------
@@ -545,6 +591,40 @@ html{scrollbar-gutter: stable both-edges;}
     setSelectedDate(new Date());
   });
 
+  // ---------- Modal Lihat PDF / Foto (tetap di dalam aplikasi) ----------
+  // Tujuan: pegawai TIDAK diarahkan ke Google Drive saat melihat bukti dukung.
+  // PDF diembed lewat iframe mode /preview (terisolasi, tak bisa jelajah Drive
+  // lain); foto ditampilkan sebagai gambar besar via endpoint thumbnail Drive.
+  var mediaModal = document.getElementById('mediaModal');
+  var mediaBody = document.getElementById('mediaModalBody');
+
+  function tutupMediaModal() {
+    mediaModal.classList.remove('open');
+    // Kosongkan isi supaya iframe/gambar berhenti memuat & tidak menumpuk.
+    mediaBody.innerHTML = '';
+  }
+  function bukaMediaModal(innerHtml) {
+    mediaBody.innerHTML = innerHtml;
+    mediaModal.classList.add('open');
+  }
+  function bukaPdfModal(url) {
+    if (!url) return;
+    bukaMediaModal('<iframe class="media-frame" src="' + escapeHtml(drivePreviewUrl(url)) +
+      '" allow="autoplay"></iframe>');
+  }
+  function bukaFotoModal(fullUrl) {
+    if (!fullUrl) return;
+    bukaMediaModal('<img class="media-img" src="' + escapeHtml(fullUrl) +
+      '" alt="Foto bukti dukung">');
+  }
+  document.getElementById('mediaModalClose').addEventListener('click', tutupMediaModal);
+  mediaModal.addEventListener('click', function (e) {
+    if (e.target === mediaModal) tutupMediaModal(); // klik area gelap = tutup
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && mediaModal.classList.contains('open')) tutupMediaModal();
+  });
+
   // ---------- Init ----------
   document.getElementById('sectionDateLabel').textContent = formatLabel(selectedDate);
   renderDateScroller();
@@ -553,5 +633,14 @@ html{scrollbar-gutter: stable both-edges;}
   muatLaporan();
 })();
 </script>
+
+<div class="media-modal" id="mediaModal">
+  <div class="media-modal-inner">
+    <button type="button" class="media-modal-close" id="mediaModalClose" aria-label="Tutup">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+    <div class="media-modal-body" id="mediaModalBody"></div>
+  </div>
+</div>
 </body>
 </html>

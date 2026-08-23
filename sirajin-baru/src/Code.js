@@ -23,7 +23,7 @@ function doGet(e) {
   var file = pageMap[page] || 'Home';
   return HtmlService.createTemplateFromFile(file)
     .evaluate()
-    .setTitle('SiRajin Morowali')
+    .setTitle('SiRajin DPMPTSP')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
