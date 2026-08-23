@@ -22,15 +22,34 @@ function insertImageAtPlaceholder(body, placeholder, imageBlob) {
   if (imageBlob) {
     var image = paragraph.appendInlineImage(imageBlob);
     // appendInlineImage() nyisip gambar di ukuran piksel ASLI (bukan
-    // otomatis nyusut muat halaman) — foto HP (bahkan yang udah dikompres
-    // client-side ke maks ~1280px) hampir selalu jauh lebih lebar dari
-    // area konten Doc (~468pt buat Letter+margin 1"), jadi bagian yang
-    // keluar dari batas halaman kepotong pas export ke PDF. Ditemukan
-    // lewat testing live pakai foto sungguhan (foto tes kecil 1x1px
-    // sebelumnya gak pernah cukup besar buat memicu ini). Susutkan
-    // proporsional (jaga aspect ratio) biar muat lebar & tinggi konten.
-    var maxWidth = body.getPageWidth() - body.getMarginLeft() - body.getMarginRight();
-    var maxHeight = body.getPageHeight() - body.getMarginTop() - body.getMarginBottom();
+    // otomatis nyusut muat kontainernya) — foto HP (bahkan yang udah
+    // dikompres client-side ke maks ~1280px) hampir selalu jauh lebih
+    // lebar dari kontainernya, jadi bagian yang keluar dari batasnya
+    // kepotong pas export ke PDF. Percobaan fix pertama membatasi ke
+    // lebar HALAMAN penuh (body.getPageWidth()) — masih kepotong, karena
+    // {{FOTO_1}}/{{FOTO_2}} di template ternyata ada di dalam TABLE_CELL
+    // yang jauh lebih sempit dari lebar halaman (dikonfirmasi lewat
+    // diagnostic live: sel lebar 248pt vs halaman 497pt) — bukan langsung
+    // di body. Batas lebar yang bener adalah lebar SEL TABEL-nya (kalau
+    // placeholder ada di dalam tabel), bukan lebar halaman. Susutkan
+    // proporsional (jaga aspect ratio) biar muat kontainer aslinya.
+    var maxWidth, maxHeight;
+    var cell = null;
+    var ancestor = paragraph.getParent();
+    while (ancestor) {
+      if (ancestor.getType && ancestor.getType() === DocumentApp.ElementType.TABLE_CELL) {
+        cell = ancestor.asTableCell();
+        break;
+      }
+      ancestor = ancestor.getParent ? ancestor.getParent() : null;
+    }
+    if (cell) {
+      maxWidth = cell.getWidth() - cell.getPaddingLeft() - cell.getPaddingRight();
+      maxHeight = body.getPageHeight() - body.getMarginTop() - body.getMarginBottom(); // baris tabel biasa auto-expand tinggi, batas ini cuma jaga-jaga
+    } else {
+      maxWidth = body.getPageWidth() - body.getMarginLeft() - body.getMarginRight();
+      maxHeight = body.getPageHeight() - body.getMarginTop() - body.getMarginBottom();
+    }
     var w = image.getWidth();
     var h = image.getHeight();
     var scale = Math.min(1, maxWidth / w, maxHeight / h);
