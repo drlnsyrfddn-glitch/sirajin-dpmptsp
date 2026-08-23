@@ -330,7 +330,12 @@ body{padding-bottom:110px;}
     wrap.style.display = 'flex';
   }
 
-  var today = new Date().toISOString().split('T')[0];
+  // Komponen tanggal LOKAL, bukan toISOString() (UTC) — bisa geser satu
+  // hari tergantung timezone runtime browser. Pola sama seperti Aktivitas.html.
+  var todayLokal = new Date();
+  var today = todayLokal.getFullYear() + '-' +
+    (todayLokal.getMonth() + 1 < 10 ? '0' : '') + (todayLokal.getMonth() + 1) + '-' +
+    (todayLokal.getDate() < 10 ? '0' : '') + todayLokal.getDate();
 
   google.script.url.getLocation(function (location) {
     idLaporan = location.parameter.id || null;
