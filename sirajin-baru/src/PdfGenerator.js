@@ -20,7 +20,24 @@ function insertImageAtPlaceholder(body, placeholder, imageBlob) {
   var paragraph = found.getElement().getParent().asParagraph();
   paragraph.clear();
   if (imageBlob) {
-    paragraph.appendInlineImage(imageBlob);
+    var image = paragraph.appendInlineImage(imageBlob);
+    // appendInlineImage() nyisip gambar di ukuran piksel ASLI (bukan
+    // otomatis nyusut muat halaman) — foto HP (bahkan yang udah dikompres
+    // client-side ke maks ~1280px) hampir selalu jauh lebih lebar dari
+    // area konten Doc (~468pt buat Letter+margin 1"), jadi bagian yang
+    // keluar dari batas halaman kepotong pas export ke PDF. Ditemukan
+    // lewat testing live pakai foto sungguhan (foto tes kecil 1x1px
+    // sebelumnya gak pernah cukup besar buat memicu ini). Susutkan
+    // proporsional (jaga aspect ratio) biar muat lebar & tinggi konten.
+    var maxWidth = body.getPageWidth() - body.getMarginLeft() - body.getMarginRight();
+    var maxHeight = body.getPageHeight() - body.getMarginTop() - body.getMarginBottom();
+    var w = image.getWidth();
+    var h = image.getHeight();
+    var scale = Math.min(1, maxWidth / w, maxHeight / h);
+    if (scale < 1) {
+      image.setWidth(Math.round(w * scale));
+      image.setHeight(Math.round(h * scale));
+    }
   }
 }
 
