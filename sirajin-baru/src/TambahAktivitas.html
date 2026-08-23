@@ -521,7 +521,7 @@ body{padding-bottom:110px;}
             btn.disabled = false;
             btn.textContent = 'Simpan Aktivitas';
             if (result.success) {
-              redirectTop('?page=aktivitas', 'Laporan tersimpan. Klik di sini untuk lanjut →');
+              redirectTop('?page=aktivitas', 'Laporan tersimpan');
             } else if (!handleSessionExpiry(result.message)) {
               errorEl.textContent = result.message;
               errorEl.style.display = 'block';

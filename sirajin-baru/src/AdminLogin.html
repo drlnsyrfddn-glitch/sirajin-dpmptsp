@@ -93,7 +93,7 @@ body{
       .withSuccessHandler(function (result) {
         if (result.success) {
           setToken(result.token);
-          redirectTop('?page=admin', 'Berhasil masuk. Klik di sini untuk lanjut →');
+          redirectTop('?page=admin', 'Berhasil masuk');
           return;
         }
         btn.disabled = false;
