@@ -275,6 +275,15 @@
   .ui-dialog-actions{display:flex;gap:10px;}
   .ui-dialog-actions .btn{flex:1;}
 
+  /* Overlay tombol "Lanjut" — muncul HANYA di iOS Safari, saat auto-redirect
+     top-level diblokir sandbox dan butuh 1x klik gesture user. Di Android tak
+     pernah muncul (nav programmatik sudah berhasil sebelum timer 400ms). */
+  .redirect-fallback{
+    position:fixed;inset:0;background:var(--bg);z-index:400;
+    display:flex;align-items:center;justify-content:center;padding:var(--space-6);
+  }
+  .redirect-fallback .btn{max-width:360px;width:100%;}
+
   .ui-toast-stack{
     position:fixed;top:var(--space-5);left:50%;transform:translateX(-50%);
     z-index:300;display:flex;flex-direction:column;gap:10px;width:100%;max-width:380px;padding:0 var(--space-5);
@@ -334,45 +343,50 @@
   // karena top-level reload GAS memutus konteks JS halaman asal. isError=true
   // -> toast merah (redirect sesi habis/ditolak); default false -> hijau (sukses).
   function redirectTop(queryString, pesan, isError) {
-    var a = document.createElement('a');
-    a.href = SIRAJIN_BASE_URL + queryString;
-    a.target = '_top';
-    a.textContent = pesan ? (pesan + '. Klik di sini untuk lanjut →') : 'Klik di sini untuk lanjut →';
-    a.className = 'btn-primary btn-inline';
-    a.style.marginTop = '12px';
-    // Tombol ini disisipkan ke <body> SETIAP kali fungsi ini dipanggil, tapi
-    // di jalur normal gak boleh sempat kelihatan — disembunyikan dulu, dan
-    // cuma dimunculkan kalau navigasinya BENAR-BENAR mentok (diblokir sandbox),
-    // bukan sekadar lambat. Dua pengaman, karena navigasi top-level GAS itu
-    // lambat: Home -> Login terukur ~2,4 detik, jadi ambang pendek (600ms
-    // sempat dipakai) bikin tombolnya nongol tiap pindah halaman padahal
-    // navigasinya baik-baik saja.
-    //   1. pagehide: begitu dokumen ini mulai dilepas, navigasi sudah pasti
-    //      jadi — timer dibatalkan, sekalipun render halaman tujuan masih lama.
-    //   2. timer 6 detik: jaring pengaman kalau pagehide tidak pernah datang
-    //      (navigasi ditolak diam-diam), supaya pengguna tetap punya jalan keluar.
-    a.style.visibility = 'hidden';
-    document.body.insertBefore(a, document.body.firstChild);
+    var url = SIRAJIN_BASE_URL + queryString;
     if (pesan) {
       try {
         sessionStorage.setItem('sirajin_pending_toast', JSON.stringify({ message: pesan, isError: !!isError }));
       } catch (e) { /* storage penuh/diblokir - toast di halaman tujuan cuma gak muncul, gak fatal */ }
     }
-    var timerTampilkan = setTimeout(function () { a.style.visibility = 'visible'; }, 8000);
-    window.addEventListener('pagehide', function () { clearTimeout(timerTampilkan); });
 
-    // Navigasi top-level. Di HP, a.click() programmatic pada anchor
-    // target="_top" sering DITOLAK sandbox (bukan gesture user) — login
-    // "tertahan" sampai tombol fallback muncul dan diklik manual. Set
-    // window.top.location.href lebih andal (API navigasi resmi, tidak
-    // bergantung gesture). Bungkus try/catch: kalau cross-origin sandbox
-    // memblokir akses window.top, jatuh ke a.click() lama sebagai cadangan.
-    var url = a.href;
-    try {
-      window.top.location.href = url;
-    } catch (e) {
-      a.click();
+    // Navigasi top-level dari dalam iframe sandbox GAS.
+    //
+    // Android Chrome: window.top.location / a.click() programmatic setelah
+    // callback async DITERIMA -> redirect langsung mulus.
+    // Safari iOS: LEBIH KETAT. Top-navigation dari iframe sandbox hanya boleh
+    // dipicu gesture user LANGSUNG; setelah callback async google.script.run,
+    // "sisa" gesture sudah hangus -> semua nav programmatik ditolak diam-diam.
+    // Satu-satunya jalan andal di iOS: user klik tombol sungguhan (gesture
+    // baru). Jadi: coba auto-nav dulu (mulus di Android), dan kalau dalam
+    // ~400ms halaman belum berpindah (khas iOS), tampilkan tombol besar di
+    // TENGAH layar (bukan pojok, bukan tunggu 8 detik) untuk 1x klik.
+    var a = document.createElement('a');
+    a.href = url;
+    a.target = '_top';
+
+    var pindahSudah = false;
+    window.addEventListener('pagehide', function () { pindahSudah = true; });
+
+    function autoNav() {
+      try { window.top.location.href = url; } catch (e) { a.click(); }
     }
+    autoNav();
+
+    setTimeout(function () {
+      if (pindahSudah) return; // Android: sudah pindah, jangan ganggu.
+      // iOS: nav ditolak. Munculkan overlay tombol di tengah.
+      var overlay = document.createElement('div');
+      overlay.className = 'redirect-fallback';
+      var btn = document.createElement('a');
+      btn.href = url;
+      btn.target = '_top';
+      btn.className = 'btn btn-primary btn-lg';
+      btn.textContent = (pesan ? pesan + ' — ' : '') + 'Lanjut ke halaman →';
+      overlay.appendChild(btn);
+      document.body.appendChild(overlay);
+      btn.focus();
+    }, 400);
   }
 
   // Tampilkan toast yang "dititipkan" redirectTop() di atas, sekali, lalu
