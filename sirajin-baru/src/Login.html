@@ -93,7 +93,17 @@ body{
       .withSuccessHandler(function (result) {
         if (result.success) {
           setToken(result.token);
-          redirectTop('?page=aktivitas', 'Berhasil masuk');
+          // Dialog "Berhasil" dengan tombol OK — redirect dijalankan DARI
+          // klik OK (gesture user segar) supaya top-navigation tidak ditolak
+          // Safari iOS. Auto-redirect setelah callback async gagal di iOS.
+          UIAlert.alert({
+            variant: 'success',
+            title: 'Berhasil Masuk',
+            message: 'Anda akan diarahkan ke halaman Aktivitas.',
+            okText: 'Lanjut ke Aktivitas'
+          }).then(function () {
+            redirectTop('?page=aktivitas');
+          });
           return;
         }
         btn.disabled = false;

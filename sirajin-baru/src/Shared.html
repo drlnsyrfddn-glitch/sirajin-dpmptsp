@@ -275,14 +275,6 @@
   .ui-dialog-actions{display:flex;gap:10px;}
   .ui-dialog-actions .btn{flex:1;}
 
-  /* Overlay tombol "Lanjut" — muncul HANYA di iOS Safari, saat auto-redirect
-     top-level diblokir sandbox dan butuh 1x klik gesture user. Di Android tak
-     pernah muncul (nav programmatik sudah berhasil sebelum timer 400ms). */
-  .redirect-fallback{
-    position:fixed;inset:0;background:var(--bg);z-index:400;
-    display:flex;align-items:center;justify-content:center;padding:var(--space-6);
-  }
-  .redirect-fallback .btn{max-width:360px;width:100%;}
 
   .ui-toast-stack{
     position:fixed;top:var(--space-5);left:50%;transform:translateX(-50%);
@@ -352,41 +344,30 @@
 
     // Navigasi top-level dari dalam iframe sandbox GAS.
     //
-    // Android Chrome: window.top.location / a.click() programmatic setelah
-    // callback async DITERIMA -> redirect langsung mulus.
+    // Android Chrome: window.top.location / a.click() programmatik DITERIMA
+    // walau dipicu setelah callback async -> redirect mulus.
     // Safari iOS: LEBIH KETAT. Top-navigation dari iframe sandbox hanya boleh
-    // dipicu gesture user LANGSUNG; setelah callback async google.script.run,
-    // "sisa" gesture sudah hangus -> semua nav programmatik ditolak diam-diam.
-    // Satu-satunya jalan andal di iOS: user klik tombol sungguhan (gesture
-    // baru). Jadi: coba auto-nav dulu (mulus di Android), dan kalau dalam
-    // ~400ms halaman belum berpindah (khas iOS), tampilkan tombol besar di
-    // TENGAH layar (bukan pojok, bukan tunggu 8 detik) untuk 1x klik.
+    // dari gesture user LANGSUNG; setelah callback async google.script.run,
+    // gesture sudah hangus -> nav programmatik ditolak diam-diam.
+    //
+    // Untuk alur yang butuh andal di iOS (mis. login), PEMANGGIL sebaiknya
+    // memunculkan UIAlert.alert() dulu lalu memanggil redirectTop() dari dalam
+    // handler klik OK-nya — saat itu gesture masih segar, jadi nav di bawah
+    // ini berjalan langsung. Fungsi ini tetap menyediakan tombol fallback
+    // tersembunyi sebagai jaring terakhir untuk pemanggil non-gesture.
     var a = document.createElement('a');
     a.href = url;
     a.target = '_top';
+    a.className = 'btn btn-primary btn-inline';
+    a.style.marginTop = '12px';
+    a.textContent = (pesan ? pesan + '. ' : '') + 'Klik di sini untuk lanjut →';
+    a.style.visibility = 'hidden';
+    document.body.insertBefore(a, document.body.firstChild);
 
-    var pindahSudah = false;
-    window.addEventListener('pagehide', function () { pindahSudah = true; });
+    var timerTampilkan = setTimeout(function () { a.style.visibility = 'visible'; }, 8000);
+    window.addEventListener('pagehide', function () { clearTimeout(timerTampilkan); });
 
-    function autoNav() {
-      try { window.top.location.href = url; } catch (e) { a.click(); }
-    }
-    autoNav();
-
-    setTimeout(function () {
-      if (pindahSudah) return; // Android: sudah pindah, jangan ganggu.
-      // iOS: nav ditolak. Munculkan overlay tombol di tengah.
-      var overlay = document.createElement('div');
-      overlay.className = 'redirect-fallback';
-      var btn = document.createElement('a');
-      btn.href = url;
-      btn.target = '_top';
-      btn.className = 'btn btn-primary btn-lg';
-      btn.textContent = (pesan ? pesan + ' — ' : '') + 'Lanjut ke halaman →';
-      overlay.appendChild(btn);
-      document.body.appendChild(overlay);
-      btn.focus();
-    }, 400);
+    try { window.top.location.href = url; } catch (e) { a.click(); }
   }
 
   // Tampilkan toast yang "dititipkan" redirectTop() di atas, sekali, lalu
