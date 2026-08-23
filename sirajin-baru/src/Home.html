@@ -140,11 +140,23 @@
   <div class="landing-strip">
     <span>SiRajin Morowali &mdash; bukti dukung kinerja harian, terekap otomatis.</span>
     <div class="stat-row">
-      <div class="stat"><b>70</b>pegawai aktif</div>
+      <div class="stat"><b id="statPegawaiAktif">&hellip;</b>pegawai aktif</div>
       <div class="stat"><b>1</b>pintu pelaporan</div>
     </div>
   </div>
 
 </div>
+<script>
+  // Ambil jumlah pegawai aktif real-time dari sheet Pegawai (endpoint
+  // publik, tanpa login). Kalau gagal, biarkan "…" — bukan info kritis.
+  google.script.run
+    .withSuccessHandler(function (result) {
+      if (result && result.success) {
+        document.getElementById('statPegawaiAktif').textContent = result.jumlah;
+      }
+    })
+    .withFailureHandler(function () { /* diamkan, tetap "…" */ })
+    .getJumlahPegawaiAktif();
+</script>
 </body>
 </html>

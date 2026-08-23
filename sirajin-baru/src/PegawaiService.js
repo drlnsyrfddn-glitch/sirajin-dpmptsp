@@ -94,3 +94,31 @@ function setPegawaiStatus(token, id, status) {
   }
   return { success: false, message: 'Pegawai tidak ditemukan.' };
 }
+
+// Pure helper — dipisah dari getJumlahPegawaiAktif() supaya bisa diunit-test
+// tanpa mock SpreadsheetApp. rows = sheet.getDataRange().getValues(), baris 0
+// header. Kolom status = index 5.
+function hitungPegawaiAktif_(rows) {
+  var jumlah = 0;
+  for (var i = 1; i < rows.length; i++) {
+    if (rows[i][5] === 'Aktif') jumlah++;
+  }
+  return jumlah;
+}
+
+// Endpoint PUBLIK (tanpa token) — dipanggil dari Home.html yang tidak login.
+// Hanya membalikkan angka agregat, tidak ada data pegawai sensitif, jadi aman
+// diekspos ke halaman publik.
+function getJumlahPegawaiAktif() {
+  try {
+    var sheet = getSheet('Pegawai');
+    var rows = sheet.getDataRange().getValues();
+    return { success: true, jumlah: hitungPegawaiAktif_(rows) };
+  } catch (e) {
+    return { success: false, message: 'Gagal memuat jumlah pegawai.' };
+  }
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { hitungPegawaiAktif_: hitungPegawaiAktif_ };
+}
