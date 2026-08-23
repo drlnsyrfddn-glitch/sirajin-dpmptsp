@@ -341,10 +341,16 @@
     a.className = 'btn-primary btn-inline';
     a.style.marginTop = '12px';
     // Tombol ini disisipkan ke <body> SETIAP kali fungsi ini dipanggil, tapi
-    // di jalur normal (auto-redirect sukses) gak boleh sempat kelihatan —
-    // disembunyikan dulu, baru dimunculkan lewat timer di bawah kalau
-    // ternyata auto-redirect gagal (timer gak akan sempat jalan kalau
-    // halaman keburu pindah duluan, karena eksekusi JS-nya keputus).
+    // di jalur normal gak boleh sempat kelihatan — disembunyikan dulu, dan
+    // cuma dimunculkan kalau navigasinya BENAR-BENAR mentok (diblokir sandbox),
+    // bukan sekadar lambat. Dua pengaman, karena navigasi top-level GAS itu
+    // lambat: Home -> Login terukur ~2,4 detik, jadi ambang pendek (600ms
+    // sempat dipakai) bikin tombolnya nongol tiap pindah halaman padahal
+    // navigasinya baik-baik saja.
+    //   1. pagehide: begitu dokumen ini mulai dilepas, navigasi sudah pasti
+    //      jadi — timer dibatalkan, sekalipun render halaman tujuan masih lama.
+    //   2. timer 6 detik: jaring pengaman kalau pagehide tidak pernah datang
+    //      (navigasi ditolak diam-diam), supaya pengguna tetap punya jalan keluar.
     a.style.visibility = 'hidden';
     document.body.insertBefore(a, document.body.firstChild);
     if (pesan) {
@@ -352,7 +358,8 @@
         sessionStorage.setItem('sirajin_pending_toast', JSON.stringify({ message: pesan, isError: !!isError }));
       } catch (e) { /* storage penuh/diblokir - toast di halaman tujuan cuma gak muncul, gak fatal */ }
     }
-    setTimeout(function () { a.style.visibility = 'visible'; }, 600);
+    var timerTampilkan = setTimeout(function () { a.style.visibility = 'visible'; }, 6000);
+    window.addEventListener('pagehide', function () { clearTimeout(timerTampilkan); });
     a.click();
   }
 
