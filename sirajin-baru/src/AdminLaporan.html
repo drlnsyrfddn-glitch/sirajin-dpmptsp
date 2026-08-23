@@ -82,14 +82,9 @@
     return keMenit(jamSelesai) - keMenit(jamMulai);
   }
 
-  function formatDuration(totalMinutes) {
-    var jam = Math.floor(totalMinutes / 60);
-    var menit = totalMinutes % 60;
-    var parts = [];
-    if (jam > 0) parts.push(jam + ' Jam');
-    if (menit > 0 || jam === 0) parts.push(menit + ' Menit');
-    return parts.join(' ') + ' (' + totalMinutes + ' Menit)';
-  }
+  // formatDuration() sekarang dari Shared.html (di-include lewat AdminShared.html
+  // baris paling atas file ini) — dulu ada copy lokal di sini, dipromosikan
+  // ke sana biar satu sumber kebenaran.
 
   // Baca 3 field filter jadi objek sesuai kontrak listLaporanArsip — field
   // kosong/kosongkan sepenuhnya (bukan dikirim string kosong), cermin dari

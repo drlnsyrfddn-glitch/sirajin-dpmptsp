@@ -85,16 +85,9 @@
 </div>
 
 <script>
-  // Port verbatim dari Aktivitas.html/TambahAktivitas.html supaya format
-  // durasi identik di seluruh aplikasi.
-  function formatDuration(totalMinutes) {
-    var jam = Math.floor(totalMinutes / 60);
-    var menit = totalMinutes % 60;
-    var parts = [];
-    if (jam > 0) parts.push(jam + ' Jam');
-    if (menit > 0 || jam === 0) parts.push(menit + ' Menit');
-    return parts.join(' ') + ' (' + totalMinutes + ' Menit)';
-  }
+  // formatDuration() sekarang dari Shared.html (di-include lewat AdminShared.html
+  // baris paling atas file ini) — dulu ada copy lokal di sini, dipromosikan
+  // ke sana biar satu sumber kebenaran.
 
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
   function todayIso() {

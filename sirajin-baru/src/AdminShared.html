@@ -168,15 +168,8 @@
   }
 </style>
 <script>
-  function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
+  // escapeHtml() sekarang dari Shared.html (di-include baris paling atas file
+  // ini) — dulu ada copy lokal di sini, dipromosikan ke sana biar satu sumber.
 
   // Inisial 1-2 huruf dari nama (mis. "Rahmawati S." -> "RS") buat avatar
   // bulatan di topbar/tabel admin. Nama kosong/aneh gak bikin crash.

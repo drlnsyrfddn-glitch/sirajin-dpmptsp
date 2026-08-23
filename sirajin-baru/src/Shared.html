@@ -539,6 +539,33 @@
     redirectTop(a.getAttribute('href'));
   });
 
+  // Dipakai di seluruh halaman (pegawai & admin, lewat AdminShared.html yang
+  // meng-include file ini) untuk merender teks bebas ketikan user ke innerHTML
+  // dengan aman. Sebelumnya terduplikasi identik di AdminShared.html &
+  // Aktivitas.html — dipromosikan ke sini supaya satu sumber kebenaran.
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // Port verbatim dari src/Utils.js (server, GAS-independent) supaya format
+  // durasi identik di seluruh aplikasi. Sebelumnya terduplikasi identik di
+  // Aktivitas.html, TambahAktivitas.html, AdminDashboard.html, AdminLaporan.html
+  // — dipromosikan ke sini supaya satu sumber kebenaran.
+  function formatDuration(totalMinutes) {
+    var jam = Math.floor(totalMinutes / 60);
+    var menit = totalMinutes % 60;
+    var parts = [];
+    if (jam > 0) parts.push(jam + ' Jam');
+    if (menit > 0 || jam === 0) parts.push(menit + ' Menit');
+    return parts.join(' ') + ' (' + totalMinutes + ' Menit)';
+  }
+
   function requireLogin() {
     if (!getToken()) { redirectTop('?page=login', 'Sesi belum login', true); }
   }

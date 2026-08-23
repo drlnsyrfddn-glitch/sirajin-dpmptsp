@@ -257,21 +257,9 @@ html{scrollbar-gutter: stable both-edges;}
     return;
   }
 
-  // NOTE: Shared.html (halaman pegawai) TIDAK menyediakan escapeHtml() —
-  // hanya AdminShared.html yang punya. Karena scope task ini cuma boleh
-  // membuat Aktivitas.html (tidak boleh mengubah Shared.html), definisikan
-  // versi lokal yang identik dengan AdminShared.html supaya perilakunya
-  // konsisten di seluruh aplikasi. Wajib ada: halaman ini merender
-  // namaAktivitas & uraian (teks bebas ketikan pegawai) ke innerHTML.
-  function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  }
+  // escapeHtml() & formatDuration() sekarang dari Shared.html (di-include
+  // baris paling atas file ini) — dulu ada copy lokal di sini, dipromosikan
+  // ke sana biar satu sumber kebenaran.
 
   var DOW_FULL = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
   var DOW_SHORT = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
@@ -288,17 +276,6 @@ html{scrollbar-gutter: stable both-edges;}
   }
   function formatLabel(d) {
     return DOW_FULL[d.getDay()] + ', ' + d.getDate() + ' ' + MONTH_FULL[d.getMonth()] + ' ' + d.getFullYear();
-  }
-
-  // Port verbatim dari src/Utils.js (server, GAS-independent) supaya format
-  // durasi identik di seluruh aplikasi — belum ada versi client sebelum ini.
-  function formatDuration(totalMinutes) {
-    var jam = Math.floor(totalMinutes / 60);
-    var menit = totalMinutes % 60;
-    var parts = [];
-    if (jam > 0) parts.push(jam + ' Jam');
-    if (menit > 0 || jam === 0) parts.push(menit + ' Menit');
-    return parts.join(' ') + ' (' + totalMinutes + ' Menit)';
   }
 
   // Format singkat khusus strip ringkasan (mis. "6j 30m") — beda dari
