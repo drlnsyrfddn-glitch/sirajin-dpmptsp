@@ -515,40 +515,52 @@ body{padding-bottom:110px;}
         return;
       }
 
-      if (isEditMode && fotoBase64.length > 0) {
-        if (!confirm('Ini akan mengganti SEMUA foto lama laporan ini dengan foto yang baru kamu pilih. Foto lama yang tidak kamu unggah ulang akan hilang. Lanjutkan?')) {
-          btn.disabled = false;
-          btn.textContent = 'Simpan Aktivitas';
-          return;
-        }
+      function simpanKeServer() {
+        google.script.run
+          .withSuccessHandler(function (result) {
+            btn.disabled = false;
+            btn.textContent = 'Simpan Aktivitas';
+            if (result.success) {
+              redirectTop('?page=aktivitas', 'Laporan tersimpan. Klik di sini untuk lanjut →');
+            } else if (!handleSessionExpiry(result.message)) {
+              errorEl.textContent = result.message;
+              errorEl.style.display = 'block';
+            }
+          })
+          .withFailureHandler(function (error) {
+            btn.disabled = false;
+            btn.textContent = 'Coba Lagi';
+            errorEl.textContent = 'Gagal menyimpan: ' + error.message + '. Data belum hilang, klik Coba Lagi.';
+            errorEl.style.display = 'block';
+          })
+          .saveAktivitas(getToken(), {
+            idLaporan: isEditMode ? idLaporan : null,
+            tanggal: tanggal,
+            jamMulai: jamMulai,
+            jamSelesai: jamSelesai,
+            namaAktivitas: namaAktivitas,
+            uraian: uraian,
+            fotoBase64: fotoBase64
+          });
       }
 
-      google.script.run
-        .withSuccessHandler(function (result) {
-          btn.disabled = false;
-          btn.textContent = 'Simpan Aktivitas';
-          if (result.success) {
-            redirectTop('?page=aktivitas', 'Laporan tersimpan. Klik di sini untuk lanjut →');
-          } else if (!handleSessionExpiry(result.message)) {
-            errorEl.textContent = result.message;
-            errorEl.style.display = 'block';
+      if (isEditMode && fotoBase64.length > 0) {
+        UIAlert.confirm({
+          variant: 'warning',
+          title: 'Ganti semua foto lama?',
+          message: 'Ini akan mengganti SEMUA foto lama laporan ini dengan foto yang baru kamu pilih. Foto lama yang tidak kamu unggah ulang akan hilang.',
+          confirmText: 'Ya, Ganti'
+        }).then(function (confirmed) {
+          if (!confirmed) {
+            btn.disabled = false;
+            btn.textContent = 'Simpan Aktivitas';
+            return;
           }
-        })
-        .withFailureHandler(function (error) {
-          btn.disabled = false;
-          btn.textContent = 'Coba Lagi';
-          errorEl.textContent = 'Gagal menyimpan: ' + error.message + '. Data belum hilang, klik Coba Lagi.';
-          errorEl.style.display = 'block';
-        })
-        .saveAktivitas(getToken(), {
-          idLaporan: isEditMode ? idLaporan : null,
-          tanggal: tanggal,
-          jamMulai: jamMulai,
-          jamSelesai: jamSelesai,
-          namaAktivitas: namaAktivitas,
-          uraian: uraian,
-          fotoBase64: fotoBase64
+          simpanKeServer();
         });
+      } else {
+        simpanKeServer();
+      }
     }, function () {
       btn.disabled = false;
       btn.textContent = 'Simpan Aktivitas';

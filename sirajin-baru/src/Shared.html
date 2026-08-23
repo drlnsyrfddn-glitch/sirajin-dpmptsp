@@ -246,20 +246,60 @@
     font-size: 14px;
   }
 
-  #sirajinToast {
-    display: none;
-    position: fixed;
-    left: 50%;
-    bottom: var(--space-7);
-    transform: translateX(-50%);
-    max-width: calc(100% - var(--space-6));
-    padding: var(--space-3) var(--space-5);
-    border-radius: var(--radius-md);
-    color: #fff;
-    font-size: 14px;
-    font-weight: 600;
-    box-shadow: var(--shadow-lg);
-    z-index: 9999;
+  /* ===== UI Feedback Kit — confirm dialog & toast, konsisten dgn tokens.css =====
+     NOTE variant "warning": --warning/--warning-soft SUDAH ADA di :root di atas
+     (nilainya sama persis dengan --gold/--gold-soft — token warna amber/emas ini
+     memang dipakai dobel sebagai alias "warning" sejak awal, bukan token baru). */
+  .ui-overlay{
+    position:fixed;inset:0;background:rgba(20,30,25,.5);backdrop-filter:blur(2px);
+    display:flex;align-items:center;justify-content:center;z-index:200;padding:var(--space-5);
+    opacity:0;pointer-events:none;transition:opacity .18s ease;
+  }
+  .ui-overlay.open{opacity:1;pointer-events:auto;}
+  .ui-dialog{
+    background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);
+    width:100%;max-width:360px;padding:var(--space-6) var(--space-6) var(--space-5);
+    text-align:center;transform:translateY(10px) scale(.98);transition:transform .18s ease;
+  }
+  .ui-overlay.open .ui-dialog{transform:translateY(0) scale(1);}
+  .ui-dialog-icon{
+    width:52px;height:52px;border-radius:50%;margin:0 auto var(--space-4);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .ui-dialog-icon.variant-danger{background:var(--danger-soft);color:var(--danger);}
+  .ui-dialog-icon.variant-warning{background:var(--warning-soft);color:var(--warning);}
+  .ui-dialog-icon.variant-success{background:var(--success-soft);color:var(--success);}
+  .ui-dialog-icon.variant-info{background:var(--primary-soft);color:var(--primary);}
+  .ui-dialog h3{font-size:17px;margin-bottom:6px;}
+  .ui-dialog p{font-size:13.5px;color:var(--ink-soft);line-height:1.55;margin-bottom:var(--space-6);}
+  .ui-dialog-actions{display:flex;gap:10px;}
+  .ui-dialog-actions .btn{flex:1;}
+
+  .ui-toast-stack{
+    position:fixed;top:var(--space-5);left:50%;transform:translateX(-50%);
+    z-index:300;display:flex;flex-direction:column;gap:10px;width:100%;max-width:380px;padding:0 var(--space-5);
+    pointer-events:none;
+  }
+  .ui-toast{
+    pointer-events:auto;
+    background:var(--surface);border:1px solid var(--border-soft);border-left:3px solid var(--primary);
+    border-radius:10px;box-shadow:var(--shadow-md);padding:13px 16px;
+    display:flex;align-items:flex-start;gap:10px;
+    opacity:0;transform:translateY(-12px);transition:opacity .2s ease, transform .2s ease;
+  }
+  .ui-toast.show{opacity:1;transform:translateY(0);}
+  .ui-toast.variant-success{border-left-color:var(--success);}
+  .ui-toast.variant-error{border-left-color:var(--danger);}
+  .ui-toast.variant-info{border-left-color:var(--primary);}
+  .ui-toast-icon{flex-shrink:0;margin-top:1px;}
+  .ui-toast-icon.variant-success{color:var(--success);}
+  .ui-toast-icon.variant-error{color:var(--danger);}
+  .ui-toast-icon.variant-info{color:var(--primary);}
+  .ui-toast-text{flex:1;font-size:13px;color:var(--ink);line-height:1.45;}
+  .ui-toast-close{flex-shrink:0;color:var(--ink-faint);cursor:pointer;padding:2px;}
+  .ui-toast-close:hover{color:var(--ink);}
+  @media (max-width:480px){
+    .ui-toast-stack{top:auto;bottom:var(--space-5);}
   }
 </style>
 <script>
@@ -295,20 +335,106 @@
     a.click();
   }
 
-  // Pengganti window.alert() — notifikasi singkat yang gak menghentikan
-  // eksekusi JS dan gak keliatan kayak popup browser generik.
-  function showToast(message, isError) {
-    var el = document.getElementById('sirajinToast');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'sirajinToast';
-      document.body.appendChild(el);
+  /* ===== UI Feedback Kit — window.UIAlert ===== */
+  (function(){
+    var ICONS = {
+      danger: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 9v4M12 16.5v.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10.3 3.8 2.6 17.5A1.8 1.8 0 0 0 4.2 20.2h15.6a1.8 1.8 0 0 0 1.6-2.7L13.7 3.8a1.8 1.8 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>',
+      warning: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v5M12 15.5v.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+      success: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8.2 12.3l2.4 2.4 5.2-5.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+      info: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5.5M12 8v.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+      error: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8v5M12 15.5v.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+    };
+
+    function ensureToastStack(){
+      var stack = document.querySelector('.ui-toast-stack');
+      if(!stack){
+        stack = document.createElement('div');
+        stack.className = 'ui-toast-stack';
+        document.body.appendChild(stack);
+      }
+      return stack;
     }
-    el.textContent = message;
-    el.style.background = isError ? 'var(--danger)' : 'var(--success)';
-    el.style.display = 'block';
-    clearTimeout(el._sirajinTimer);
-    el._sirajinTimer = setTimeout(function () { el.style.display = 'none'; }, 4000);
+
+    function confirmDialog(opts){
+      opts = opts || {};
+      var variant = opts.variant || 'warning';
+      return new Promise(function(resolve){
+        var overlay = document.createElement('div');
+        overlay.className = 'ui-overlay';
+        overlay.innerHTML =
+          '<div class="ui-dialog" role="alertdialog" aria-modal="true">' +
+            '<div class="ui-dialog-icon variant-' + variant + '">' + (ICONS[variant] || ICONS.warning) + '</div>' +
+            '<h3 class="font-display">' + (opts.title || 'Anda yakin?') + '</h3>' +
+            '<p>' + (opts.message || '') + '</p>' +
+            '<div class="ui-dialog-actions">' +
+              '<button type="button" class="btn btn-secondary" data-act="cancel">' + (opts.cancelText || 'Batal') + '</button>' +
+              '<button type="button" class="btn btn-primary" data-act="confirm">' + (opts.confirmText || 'Ya, Lanjutkan') + '</button>' +
+            '</div>' +
+          '</div>';
+
+        document.body.appendChild(overlay);
+        requestAnimationFrame(function(){ overlay.classList.add('open'); });
+
+        function close(result){
+          overlay.classList.remove('open');
+          setTimeout(function(){ overlay.remove(); }, 180);
+          resolve(result);
+        }
+
+        overlay.querySelector('[data-act="cancel"]').addEventListener('click', function(){ close(false); });
+        overlay.querySelector('[data-act="confirm"]').addEventListener('click', function(){ close(true); });
+        overlay.addEventListener('click', function(e){ if(e.target === overlay) close(false); });
+      });
+    }
+
+    // NOTE bawaan bundle: toast() aslinya nyusun pesan langsung ke innerHTML
+    // via string concat (gak escape HTML) — risiko nyata karena pesan error
+    // server (result.message) lewat jalur ini. Di sini span teksnya dibiarkan
+    // kosong di template innerHTML, lalu diisi lewat textContent (aman, gak
+    // bisa nyuntik HTML).
+    function toastFn(opts){
+      opts = opts || {};
+      var type = opts.type || 'info';
+      var duration = opts.duration || 4000;
+      var stack = ensureToastStack();
+
+      var el = document.createElement('div');
+      el.className = 'ui-toast variant-' + type;
+      el.innerHTML =
+        '<span class="ui-toast-icon variant-' + type + '">' + (ICONS[type] || ICONS.info) + '</span>' +
+        '<span class="ui-toast-text"></span>' +
+        '<span class="ui-toast-close" data-act="close">' +
+          '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>' +
+        '</span>';
+      el.querySelector('.ui-toast-text').textContent = opts.message || '';
+
+      stack.appendChild(el);
+      requestAnimationFrame(function(){ el.classList.add('show'); });
+
+      function dismiss(){
+        el.classList.remove('show');
+        setTimeout(function(){ el.remove(); }, 200);
+      }
+      el.querySelector('[data-act="close"]').addEventListener('click', dismiss);
+      if(duration > 0) setTimeout(dismiss, duration);
+    }
+
+    window.UIAlert = {
+      confirm: confirmDialog,
+      toast: toastFn,
+      success: function(message){ toastFn({type:'success', message: message}); },
+      error: function(message){ toastFn({type:'error', message: message}); },
+      info: function(message){ toastFn({type:'info', message: message}); }
+    };
+  })();
+
+  // Pengganti window.alert() — notifikasi singkat yang gak menghentikan
+  // eksekusi JS dan gak keliatan kayak popup browser generik. Sekarang cuma
+  // delegasi ke UIAlert.toast() (stacked-toast) — signature dipertahankan
+  // sama persis (showToast(message, isError)) supaya semua call site lain
+  // di aplikasi jalan tanpa perubahan apapun.
+  function showToast(message, isError) {
+    UIAlert.toast({ type: isError ? 'error' : 'success', message: message });
   }
 
   // Masalah href relatif di atas gak cuma soal redirect lewat JS — SETIAP

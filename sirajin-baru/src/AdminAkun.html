@@ -251,25 +251,31 @@
     var a = cariAkun(id);
     if (!a) return;
     var statusBaru = a.status === 'Aktif' ? 'Nonaktif' : 'Aktif';
-    if (!confirm('Ubah status ' + a.nama + ' menjadi ' + statusBaru + '?')) return;
-
-    google.script.run
-      .withSuccessHandler(function (result) {
-        // Server bisa menolak (mis. 'Tidak bisa menonaktifkan akun sendiri.')
-        // — pesannya ditampilkan apa adanya, tidak ditebak/disaring di klien.
-        if (!result.success) {
-          if (!handleSessionExpiry(result.message, '?page=admin-login')) {
-            showToast(result.message, true);
+    UIAlert.confirm({
+      variant: statusBaru === 'Nonaktif' ? 'warning' : 'info',
+      title: 'Ubah status ' + escapeHtml(a.nama) + '?',
+      message: 'Status akan diubah menjadi ' + escapeHtml(statusBaru) + '.',
+      confirmText: 'Ya, Ubah'
+    }).then(function (confirmed) {
+      if (!confirmed) return;
+      google.script.run
+        .withSuccessHandler(function (result) {
+          // Server bisa menolak (mis. 'Tidak bisa menonaktifkan akun sendiri.')
+          // — pesannya ditampilkan apa adanya, tidak ditebak/disaring di klien.
+          if (!result.success) {
+            if (!handleSessionExpiry(result.message, '?page=admin-login')) {
+              showToast(result.message, true);
+            }
+            return;
           }
-          return;
-        }
-        showToast('Status akun admin berhasil diubah.');
-        muatAkun();
-      })
-      .withFailureHandler(function (error) {
-        showToast('Gagal mengubah status akun admin: ' + error.message, true);
-      })
-      .setAdminStatus(getToken(), id, statusBaru);
+          showToast('Status akun admin berhasil diubah.');
+          muatAkun();
+        })
+        .withFailureHandler(function (error) {
+          showToast('Gagal mengubah status akun admin: ' + error.message, true);
+        })
+        .setAdminStatus(getToken(), id, statusBaru);
+    });
   }
 
   document.getElementById('akunBody').addEventListener('click', function (e) {

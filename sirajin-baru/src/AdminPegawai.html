@@ -197,23 +197,29 @@
     var p = cariPegawai(id);
     if (!p) return;
     var statusBaru = p.status === 'Aktif' ? 'Nonaktif' : 'Aktif';
-    if (!confirm('Ubah status ' + p.namaLengkap + ' menjadi ' + statusBaru + '?')) return;
-
-    google.script.run
-      .withSuccessHandler(function (result) {
-        if (!result.success) {
-          if (!handleSessionExpiry(result.message, '?page=admin-login')) {
-            showToast(result.message, true);
+    UIAlert.confirm({
+      variant: statusBaru === 'Nonaktif' ? 'warning' : 'info',
+      title: 'Ubah status ' + escapeHtml(p.namaLengkap) + '?',
+      message: 'Status akan diubah menjadi ' + escapeHtml(statusBaru) + '.',
+      confirmText: 'Ya, Ubah'
+    }).then(function (confirmed) {
+      if (!confirmed) return;
+      google.script.run
+        .withSuccessHandler(function (result) {
+          if (!result.success) {
+            if (!handleSessionExpiry(result.message, '?page=admin-login')) {
+              showToast(result.message, true);
+            }
+            return;
           }
-          return;
-        }
-        showToast('Status pegawai berhasil diubah.');
-        muatPegawai();
-      })
-      .withFailureHandler(function (error) {
-        showToast('Gagal mengubah status pegawai: ' + error.message, true);
-      })
-      .setPegawaiStatus(getToken(), id, statusBaru);
+          showToast('Status pegawai berhasil diubah.');
+          muatPegawai();
+        })
+        .withFailureHandler(function (error) {
+          showToast('Gagal mengubah status pegawai: ' + error.message, true);
+        })
+        .setPegawaiStatus(getToken(), id, statusBaru);
+    });
   }
 
   document.getElementById('pegawaiBody').addEventListener('click', function (e) {
