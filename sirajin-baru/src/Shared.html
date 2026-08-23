@@ -358,9 +358,21 @@
         sessionStorage.setItem('sirajin_pending_toast', JSON.stringify({ message: pesan, isError: !!isError }));
       } catch (e) { /* storage penuh/diblokir - toast di halaman tujuan cuma gak muncul, gak fatal */ }
     }
-    var timerTampilkan = setTimeout(function () { a.style.visibility = 'visible'; }, 15000);
+    var timerTampilkan = setTimeout(function () { a.style.visibility = 'visible'; }, 8000);
     window.addEventListener('pagehide', function () { clearTimeout(timerTampilkan); });
-    a.click();
+
+    // Navigasi top-level. Di HP, a.click() programmatic pada anchor
+    // target="_top" sering DITOLAK sandbox (bukan gesture user) — login
+    // "tertahan" sampai tombol fallback muncul dan diklik manual. Set
+    // window.top.location.href lebih andal (API navigasi resmi, tidak
+    // bergantung gesture). Bungkus try/catch: kalau cross-origin sandbox
+    // memblokir akses window.top, jatuh ke a.click() lama sebagai cadangan.
+    var url = a.href;
+    try {
+      window.top.location.href = url;
+    } catch (e) {
+      a.click();
+    }
   }
 
   // Tampilkan toast yang "dititipkan" redirectTop() di atas, sekali, lalu

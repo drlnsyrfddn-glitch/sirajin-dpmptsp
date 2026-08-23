@@ -90,10 +90,10 @@ body{padding-bottom:110px;}
   .form-header{padding:var(--space-5) var(--space-8);}
   .container{max-width:760px;padding:var(--space-7) var(--space-8);}
   .photo-grid{grid-template-columns:repeat(4,1fr);max-width:420px;}
-  /* Desktop: taruh tombol tepat di bawah area upload dan biarkan Simpan
-     melebar penuh (tidak mepet ke pojok kanan). */
-  .save-bar{position:static;background:none;padding:0;justify-content:stretch;margin-top:var(--space-6);}
-  .save-bar .btn-primary{flex:1;padding-left:36px;padding-right:36px;}
+  /* Desktop: tombol Batal + Simpan berkelompok di TENGAH bawah, tepat di
+     bawah area upload (bukan mepet kiri maupun kanan). */
+  .save-bar{position:static;background:none;padding:0;justify-content:center;margin-top:var(--space-6);}
+  .save-bar .btn-primary{flex:0 0 auto;padding-left:36px;padding-right:36px;}
 }
 </style>
 </head>
