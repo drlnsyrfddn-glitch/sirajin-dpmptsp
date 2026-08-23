@@ -79,6 +79,14 @@ function generateLaporanPdf(pegawai, laporan) {
   var doc = DocumentApp.openById(copy.getId());
   var body = doc.getBody();
 
+  // Ukuran kertas F4/Folio (8.5 x 13 in) — lebar sama kayak Letter default,
+  // tinggi ditambah 2in biar foto potrait + teks gak gampang luber ke
+  // halaman 2 dengan spasi kosong besar. Harus diset SEBELUM loop insert
+  // foto di bawah, karena insertImageAtPlaceholder() baca body.getPageHeight()
+  // buat hitung batas scale-nya.
+  body.setPageWidth(8.5 * 72);
+  body.setPageHeight(13 * 72);
+
   body.replaceText('{{NAMA}}', pegawai.nama);
   body.replaceText('{{NIP}}', pegawai.nip);
   body.replaceText('{{JABATAN}}', pegawai.jabatan);
