@@ -321,9 +321,15 @@
   var SIRAJIN_BASE_URL = '<?= ScriptApp.getService().getUrl() ?>';
   var SIRAJIN_LOGO_SRC = '<?= getLogoDataUri_() ?>';
 
-  function getToken() { return sessionStorage.getItem('sirajin_token'); }
-  function setToken(t) { sessionStorage.setItem('sirajin_token', t); }
-  function clearToken() { sessionStorage.removeItem('sirajin_token'); }
+  // PAKAI localStorage, BUKAN sessionStorage. GAS me-recreate sandbox iframe
+  // (sekaligus sessionStorage-nya) pada SETIAP top-level doGet reload, jadi
+  // token yang disimpan di sessionStorage HILANG begitu redirect login->
+  // aktivitas terjadi -> guard getToken() gagal -> pegawai dilempar balik ke
+  // login terus-menerus. localStorage selamat lintas reload (dibuktikan live
+  // 2026-08-24: ls_probe bertahan, sessionStorage token null setelah nav).
+  function getToken() { return localStorage.getItem('sirajin_token'); }
+  function setToken(t) { localStorage.setItem('sirajin_token', t); }
+  function clearToken() { localStorage.removeItem('sirajin_token'); }
 
   // pesan (kalau ada) adalah kalimat INTI-nya saja ("Berhasil masuk", bukan
   // "Berhasil masuk. Klik di sini untuk lanjut →") — dua tempat yang
@@ -338,7 +344,7 @@
     var url = SIRAJIN_BASE_URL + queryString;
     if (pesan) {
       try {
-        sessionStorage.setItem('sirajin_pending_toast', JSON.stringify({ message: pesan, isError: !!isError }));
+        localStorage.setItem('sirajin_pending_toast', JSON.stringify({ message: pesan, isError: !!isError }));
       } catch (e) { /* storage penuh/diblokir - toast di halaman tujuan cuma gak muncul, gak fatal */ }
     }
 
@@ -376,9 +382,9 @@
   // dependensi DOM yang belum tentu siap kalau dijalankan sinkron di sini.
   document.addEventListener('DOMContentLoaded', function () {
     try {
-      var raw = sessionStorage.getItem('sirajin_pending_toast');
+      var raw = localStorage.getItem('sirajin_pending_toast');
       if (!raw) return;
-      sessionStorage.removeItem('sirajin_pending_toast');
+      localStorage.removeItem('sirajin_pending_toast');
       var data = JSON.parse(raw);
       if (data && data.message) showToast(data.message, !!data.isError);
     } catch (e) { /* abaikan - toast bukan hal kritis */ }
