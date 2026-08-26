@@ -34,6 +34,15 @@
       <label for="filterPegawai">Cari pegawai</label>
       <input class="input" type="text" id="filterPegawai" placeholder="Cari nama, NIP, jabatan, atau unit kerja...">
     </div>
+    <div class="filter-field" style="min-width:150px;">
+      <label for="ukuranHalamanPegawai">Tampilkan</label>
+      <select class="select" id="ukuranHalamanPegawai">
+        <option value="5">5 data</option>
+        <option value="10" selected>10 data</option>
+        <option value="15">15 data</option>
+        <option value="50">50 data</option>
+      </select>
+    </div>
   </div>
 
   <div class="card panel">
@@ -85,7 +94,7 @@
   // tentukan status lawan (Aktif <-> Nonaktif), pencarian, dan pagination —
   // semua tanpa round-trip ke server (data ~70 pegawai, aman dimuat sekaligus).
   var daftarPegawaiCache = [];
-  var PEGAWAI_PAGE_SIZE = 10;
+  var pegawaiPageSize = 10;
   var pegawaiSearchTerm = '';
   var pegawaiPage = 1;
 
@@ -137,12 +146,12 @@
   // kali data, kata kunci pencarian, atau halaman berubah.
   function refreshTampilanPegawai() {
     var terfilter = getPegawaiTerfilter();
-    var totalHalaman = Math.max(1, Math.ceil(terfilter.length / PEGAWAI_PAGE_SIZE));
+    var totalHalaman = Math.max(1, Math.ceil(terfilter.length / pegawaiPageSize));
     if (pegawaiPage > totalHalaman) pegawaiPage = totalHalaman;
     if (pegawaiPage < 1) pegawaiPage = 1;
 
-    var mulai = (pegawaiPage - 1) * PEGAWAI_PAGE_SIZE;
-    var halamanIni = terfilter.slice(mulai, mulai + PEGAWAI_PAGE_SIZE);
+    var mulai = (pegawaiPage - 1) * pegawaiPageSize;
+    var halamanIni = terfilter.slice(mulai, mulai + pegawaiPageSize);
 
     document.getElementById('pegawaiCount').textContent =
       (pegawaiSearchTerm.trim() ? terfilter.length + ' dari ' + daftarPegawaiCache.length : terfilter.length) + ' pegawai';
@@ -307,6 +316,12 @@
 
   document.getElementById('filterPegawai').addEventListener('input', function (e) {
     pegawaiSearchTerm = e.target.value;
+    pegawaiPage = 1;
+    refreshTampilanPegawai();
+  });
+
+  document.getElementById('ukuranHalamanPegawai').addEventListener('change', function (e) {
+    pegawaiPageSize = parseInt(e.target.value, 10);
     pegawaiPage = 1;
     refreshTampilanPegawai();
   });
