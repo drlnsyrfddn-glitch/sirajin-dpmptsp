@@ -2,8 +2,15 @@
 <html>
 <head><base target="_top"><?!= include('AdminShared'); ?>
 <style>
-/* Halaman ini cuma pakai kelas admin-shell/panel/data-table/modal dst dari
-   AdminShared.html — tidak ada gaya tambahan khusus halaman ini. */
+/* Halaman ini cuma pakai kelas admin-shell/panel/filter-bar/data-table/modal
+   dst dari AdminShared.html. Satu tambahan khusus halaman ini: footer
+   pagination di bawah tabel (ID selector, satu instance saja). */
+#pegawaiPagination {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: var(--space-4) var(--space-5); border-top: 1px solid var(--border-soft);
+}
+#pegawaiPagination .btn { padding: 8px 16px; font-size: 13px; }
+#pegawaiPagination .pagination-info { font-size: 12.5px; color: var(--ink-faint); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -22,6 +29,13 @@
     </button>
   </div>
 
+  <div class="filter-bar">
+    <div class="filter-field" style="flex:1;min-width:240px;">
+      <label for="filterPegawai">Cari pegawai</label>
+      <input class="input" type="text" id="filterPegawai" placeholder="Cari nama, NIP, jabatan, atau unit kerja...">
+    </div>
+  </div>
+
   <div class="card panel">
     <div class="panel-head">
       <h2>Daftar Pegawai</h2>
@@ -35,6 +49,7 @@
         <tbody id="pegawaiBody"></tbody>
       </table>
     </div>
+    <div id="pegawaiPagination"></div>
   </div>
 
 </div>
@@ -66,9 +81,13 @@
 
   // id pegawai yang lagi diedit di modal; null berarti mode tambah baru.
   var pegawaiEditId = null;
-  // Cache hasil listPegawai() terakhir, dipakai buat isi ulang modal edit
-  // dan tentukan status lawan (Aktif <-> Nonaktif) tanpa round-trip ke server.
+  // Cache hasil listPegawai() terakhir, dipakai buat isi ulang modal edit,
+  // tentukan status lawan (Aktif <-> Nonaktif), pencarian, dan pagination —
+  // semua tanpa round-trip ke server (data ~70 pegawai, aman dimuat sekaligus).
   var daftarPegawaiCache = [];
+  var PEGAWAI_PAGE_SIZE = 10;
+  var pegawaiSearchTerm = '';
+  var pegawaiPage = 1;
 
   function muatPegawai() {
     document.getElementById('pegawaiBody').innerHTML =
@@ -83,7 +102,8 @@
           return;
         }
         daftarPegawaiCache = result.data || [];
-        renderPegawai(daftarPegawaiCache);
+        pegawaiPage = 1;
+        refreshTampilanPegawai();
       })
       .withFailureHandler(function (error) {
         tampilkanErrorTabel('Gagal memuat data pegawai: ' + error.message);
@@ -95,14 +115,68 @@
     document.getElementById('pegawaiCount').textContent = '-';
     document.getElementById('pegawaiBody').innerHTML =
       '<tr><td colspan="6" style="color:var(--danger);">' + escapeHtml(message) + '</td></tr>';
+    document.getElementById('pegawaiPagination').innerHTML = '';
+  }
+
+  // Filter daftarPegawaiCache berdasarkan kata kunci (nama/NIP/jabatan/unit
+  // kerja, tanpa peduli huruf besar-kecil). Data sudah dimuat penuh di client,
+  // jadi cukup filter array di sini, tidak perlu panggil server lagi.
+  function getPegawaiTerfilter() {
+    var kata = pegawaiSearchTerm.trim().toLowerCase();
+    if (!kata) return daftarPegawaiCache;
+    return daftarPegawaiCache.filter(function (p) {
+      return (p.namaLengkap || '').toLowerCase().indexOf(kata) !== -1 ||
+        (p.nip || '').toLowerCase().indexOf(kata) !== -1 ||
+        (p.jabatan || '').toLowerCase().indexOf(kata) !== -1 ||
+        (p.unitKerja || '').toLowerCase().indexOf(kata) !== -1;
+    });
+  }
+
+  // Titik pusat render: hitung ulang hasil pencarian + potong sesuai halaman
+  // aktif, lalu render baris tabel dan kontrol pagination. Dipanggil tiap
+  // kali data, kata kunci pencarian, atau halaman berubah.
+  function refreshTampilanPegawai() {
+    var terfilter = getPegawaiTerfilter();
+    var totalHalaman = Math.max(1, Math.ceil(terfilter.length / PEGAWAI_PAGE_SIZE));
+    if (pegawaiPage > totalHalaman) pegawaiPage = totalHalaman;
+    if (pegawaiPage < 1) pegawaiPage = 1;
+
+    var mulai = (pegawaiPage - 1) * PEGAWAI_PAGE_SIZE;
+    var halamanIni = terfilter.slice(mulai, mulai + PEGAWAI_PAGE_SIZE);
+
+    document.getElementById('pegawaiCount').textContent =
+      (pegawaiSearchTerm.trim() ? terfilter.length + ' dari ' + daftarPegawaiCache.length : terfilter.length) + ' pegawai';
+
+    renderPegawai(halamanIni);
+    renderPaginasiPegawai(totalHalaman, terfilter.length);
+  }
+
+  function renderPaginasiPegawai(totalHalaman, totalTerfilter) {
+    var el = document.getElementById('pegawaiPagination');
+    if (totalTerfilter === 0) { el.innerHTML = ''; return; }
+
+    el.innerHTML =
+      '<button type="button" class="btn btn-secondary" id="btnPegawaiPrev"' + (pegawaiPage <= 1 ? ' disabled' : '') + '>&lsaquo; Sebelumnya</button>' +
+      '<span class="pagination-info">Halaman ' + pegawaiPage + ' dari ' + totalHalaman + '</span>' +
+      '<button type="button" class="btn btn-secondary" id="btnPegawaiNext"' + (pegawaiPage >= totalHalaman ? ' disabled' : '') + '>Berikutnya &rsaquo;</button>';
+
+    document.getElementById('btnPegawaiPrev').addEventListener('click', function () {
+      pegawaiPage--;
+      refreshTampilanPegawai();
+    });
+    document.getElementById('btnPegawaiNext').addEventListener('click', function () {
+      pegawaiPage++;
+      refreshTampilanPegawai();
+    });
   }
 
   function renderPegawai(data) {
-    document.getElementById('pegawaiCount').textContent = data.length + ' pegawai';
-
     var bodyEl = document.getElementById('pegawaiBody');
     if (data.length === 0) {
-      bodyEl.innerHTML = '<tr><td colspan="6" style="color:var(--ink-faint);">Belum ada data pegawai.</td></tr>';
+      var pesan = pegawaiSearchTerm.trim()
+        ? 'Tidak ada pegawai yang cocok dengan pencarian.'
+        : 'Belum ada data pegawai.';
+      bodyEl.innerHTML = '<tr><td colspan="6" style="color:var(--ink-faint);">' + pesan + '</td></tr>';
       return;
     }
 
@@ -229,6 +303,12 @@
     var action = btn.getAttribute('data-action');
     if (action === 'edit') bukaModalEdit(id);
     else if (action === 'toggle') toggleStatusPegawai(id);
+  });
+
+  document.getElementById('filterPegawai').addEventListener('input', function (e) {
+    pegawaiSearchTerm = e.target.value;
+    pegawaiPage = 1;
+    refreshTampilanPegawai();
   });
 
   document.addEventListener('DOMContentLoaded', function () {
