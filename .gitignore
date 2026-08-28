@@ -2,3 +2,8 @@ node_modules/
 .clasp.json
 *.log
 .playwright-mcp/
+*-verify.png
+*-check.png
+home-mobile.png
+kelola-pegawai-50data-full.png
+desain-baru/
